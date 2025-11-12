@@ -26,20 +26,130 @@ This document provides comprehensive context for customizing the GP2040-CE firmw
 
 ### Board Specifications
 - **Microcontroller**: RP2040 (Raspberry Pi Pico-based)
-- **Size**: 5.1cm × 3.1cm
+- **Size**: 5.1cm × 3.1cm (51mm × 31mm)
 - **Mounting holes**: 45mm × 25mm centers, 3mm diameter
 - **Firmware**: GP2040-CE (open source)
 - **Features**: 
   - USB-C connectivity
   - Exposed PCB for easy modification
-  - LED support for button lighting
-  - Compact, acrylic construction
+  - RGB LED support
+  - OLED display support (I2C)
+  - Compact form factor
+  - Dual-row GPIO headers (30 pins total)
 
-### Pin Layout (from image)
-The board has dual rows of GPIO pins with the following labeled sections:
-- **Top Row**: Boot button, left/up/down/right directional inputs, OLED interface, RGB interface
-- **Bottom Row**: USB connection, function button outputs, HOME/L3/R3/system buttons
-- **5P Expansion Socket**: Located on right edge
+### Detailed Pinout (from Hardware Images)
+
+Based on the provided hardware images, here is the complete Sky 2040 pinout:
+
+#### Top Row (Left to Right, Pins 1-15) - Button Input Row
+All pins on this row are **button inputs** with active-low configuration (button press connects GPIO to GND via the External GND column).
+
+| Pin | External | Internal | Estimated GPIO | Function |
+|-----|----------|----------|----------------|----------|
+| 1   | GND      | A        | GPIO 2         | A button (B1) - Ground connection |
+| 2   | GND      | B        | GPIO 3         | B button (B2) - Ground connection |
+| 3   | GND      | X        | GPIO 4         | X button (B3) - Ground connection |
+| 4   | GND      | Y        | GPIO 5         | Y button (B4) - Ground connection |
+| 5   | GND      | L1       | GPIO 6         | L1 button - Ground connection |
+| 6   | GND      | R1       | GPIO 7         | R1 button - Ground connection |
+| 7   | GND      | L2       | GPIO 8         | L2 button - Ground connection |
+| 8   | GND      | R2       | GPIO 9         | R2 button - Ground connection |
+| 9   | GND      | L3       | GPIO 10        | L3 button - Ground connection |
+| 10  | GND      | R3       | GPIO 11        | R3 button - Ground connection |
+| 11  | GND      | SEL      | GPIO 12        | Select button - Ground connection |
+| 12  | GND      | STA      | GPIO 13        | Start button - Ground connection |
+| 13  | GND      | HOME     | GPIO 14        | Home/PS button - Ground connection |
+| 14  | GND      | TURBO    | GPIO 15        | Turbo button - Ground connection |
+| 15  | GND      | TU-LED   | -              | Turbo LED - Ground connection |
+
+**How Button Inputs Work:**
+- Each button's GPIO pin has an internal pull-up resistor enabled in firmware
+- When button is NOT pressed: GPIO reads HIGH (3.3V via pull-up)
+- When button IS pressed: Button closes circuit to GND → GPIO reads LOW (0V)
+- This is the standard "active-low" button configuration
+
+#### Bottom Row (Right to Left, Pins 16-30) - System & Direction Controls
+| Pin | Internal | External | GPIO  | Function |
+|-----|----------|----------|-------|----------|
+| 30  | 5V       | GND      | -     | 5V Power / Ground |
+| 29  | GND      | A2       | GPIO 29 | RGB LED Data (ADC3) |
+| 28  | LED-D    | GND      | GPIO 28 | LED Data (ADC2) - **Available for turbo dial** |
+| 27  | GND      | LS       | GPIO 27 | Left Stick (L3) / Ground (ADC1) |
+| 26  | RUN      | RS       | GPIO 26 | Right Stick (R3) / Reset (ADC0) |
+| 25  | GND      | GND      | -     | Ground |
+| 24  | 3V3      | 3V3      | -     | 3.3V Power |
+| 23  | SCL      | SWCLK    | GPIO 22 | I2C Clock (OLED) / SWD Clock |
+| 22  | SDA      | SWDIO    | GPIO 21 | I2C Data (OLED) / SWD Data |
+| 21  | GP22     | GND      | GPIO 22 | Expansion / Ground |
+| 20  | AU       | GND      | GPIO 16 | Up direction button - Ground connection |
+| 19  | AD       | GND      | GPIO 17 | Down direction button - Ground connection |
+| 18  | AR       | GND      | GPIO 19 | Right direction button - Ground connection |
+| 17  | AL       | GND      | GPIO 18 | Left direction button - Ground connection |
+| 16  | GND      | BOOT     | -     | Boot button / Ground |
+
+#### Button to GPIO Mapping (Common Configuration)
+Based on typical GP2040-CE Sky 2040 configurations:
+- **A (B1)**: GPIO 2
+- **B (B2)**: GPIO 3
+- **X (B3)**: GPIO 4
+- **Y (B4)**: GPIO 5
+- **L1**: GPIO 6
+- **R1**: GPIO 7
+- **L2**: GPIO 8
+- **R2**: GPIO 9
+- **L3**: GPIO 10
+- **R3**: GPIO 11
+- **SEL (Select)**: GPIO 12
+- **STA (Start)**: GPIO 13
+- **HOME**: GPIO 14
+- **TURBO**: GPIO 15
+- **Up**: GPIO 16
+- **Down**: GPIO 17
+- **Left**: GPIO 18
+- **Right**: GPIO 19
+
+#### Available Pins for Custom Features
+**ADC-Capable Pins** (for turbo speed dial):
+- **GPIO 26** (ADC0) - Available
+- **GPIO 27** (ADC1) - Available
+- **GPIO 28** (ADC2) - Available (Recommended for turbo dial)
+- **GPIO 29** (ADC3) - May be used for RGB LED
+
+**Digital GPIO Pins Available**:
+- **GPIO 20** - Available
+- **GPIO 21** - I2C SDA (used if OLED present)
+- **GPIO 22** - I2C SCL (used if OLED present)
+- **GPIO 23-25** - Available (check specific board)
+- **GPIO 26-27** - ADC pins, can be used as digital
+
+#### 5P Expansion Socket
+Located on the right edge of the board, provides additional connectivity for custom hardware like turbo switches.
+
+### GPIO Allocation for Turbo Features
+
+#### Recommended Pin Assignment:
+**Turbo Speed Dial (Potentiometer)**:
+- **GPIO 28 (ADC2)** - Turbo speed dial analog input
+  - Connect: Pot wiper → GPIO 28, End 1 → GND, End 2 → 3.3V
+
+**Per-Button Turbo Switches** (8 switches needed):
+Using available GPIO pins (verify against your specific board):
+- **GPIO 20** → B1 (A button) turbo switch
+- **GPIO 23** → B2 (B button) turbo switch
+- **GPIO 24** → B3 (X button) turbo switch
+- **GPIO 25** → B4 (Y button) turbo switch
+- **GPIO 26** → L1 turbo switch
+- **GPIO 27** → R1 turbo switch
+- **GPIO 0** → L2 turbo switch (if available)
+- **GPIO 1** → R2 turbo switch (if available)
+
+*Note: Final pin assignment depends on which GPIOs are actually unused on your specific Sky 2040 variant. GPIO 21-22 are typically reserved for I2C (OLED display).*
+
+### Physical Connection Notes
+- All button connections are **active-low** (button press connects GPIO to GND)
+- Use internal pull-up resistors (enabled in firmware)
+- No external resistors needed for switches
+- Potentiometer requires 3.3V power connection
 
 ### Board Review Notes
 - Described as "mini, and slim" acrylic controller
@@ -47,6 +157,7 @@ The board has dual rows of GPIO pins with the following labeled sections:
 - Runs GP2040-CE firmware natively
 - Supports custom artwork
 - Good option for leverless/all-button controllers
+- Compact size makes it ideal for custom enclosures
 
 ---
 
@@ -142,12 +253,12 @@ The existing turbo feature in GP2040-CE is implemented as an add-on module locat
 ```cpp
 // Already implemented in turbo.cpp - just need to enable it!
 // Connect potentiometer:
-// - Pin 1 (wiper) → GPIO 26/27/28/29 (ADC pin)
+// - Pin 1 (wiper) → GPIO 28 (ADC2) [RECOMMENDED]
 // - Pin 2 → GND
 // - Pin 3 → 3.3V
 
 // In BoardConfig.h:
-#define PIN_SHMUP_DIAL 28  // Or 26, 27, 29
+#define PIN_SHMUP_DIAL 28  // Use GPIO 28 (ADC2)
 ```
 
 **How it works**:
@@ -178,11 +289,19 @@ GP2040-CE's current turbo implementation already supports reading multiple GPIO 
 ```
 For each button (e.g., B1):
 ┌─────────────┐
-│ Toggle SW 1 │──── GPIO Pin (e.g., GPIO 22)
+│ Toggle SW 1 │──── GPIO Pin (e.g., GPIO 20)
 │   (B1 Turbo)│──── GND
 └─────────────┘
 
-Repeat for all 8 buttons with unique GPIO pins
+Sky 2040 specific wiring:
+Switch 1 (B1) → GPIO 20 + GND
+Switch 2 (B2) → GPIO 23 + GND
+Switch 3 (B3) → GPIO 24 + GND
+Switch 4 (B4) → GPIO 25 + GND
+Switch 5 (L1) → GPIO 26 + GND
+Switch 6 (R1) → GPIO 27 + GND
+Switch 7 (L2) → GPIO 0 + GND (verify availability)
+Switch 8 (R2) → GPIO 1 + GND (verify availability)
 ```
 
 #### Firmware Extension
@@ -215,8 +334,8 @@ void TurboInput::process() {
 ```
 
 **Pin Requirements**:
-- 8 GPIO pins for switches (can use any available digital pins)
-- 1 ADC pin for turbo speed dial (GPIO 26-29)
+- 8 GPIO pins for switches (GPIO 20, 23-27, 0-1)
+- 1 ADC pin for turbo speed dial (GPIO 28 recommended)
 - Total: 9 GPIO pins needed
 
 **Switch Behavior Options**:
@@ -228,22 +347,27 @@ void TurboInput::process() {
 ```cpp
 // In configs/Sky2040/BoardConfig.h
 #define TURBO_ENABLED 1
-#define PIN_SHMUP_DIAL 28          // Speed control dial
+#define PIN_SHMUP_DIAL 28          // Speed control dial (GPIO 28 / ADC2)
 
 // Per-button turbo switches
-#define PIN_TURBO_SWITCH_B1 22     // GPIO assignments
-#define PIN_TURBO_SWITCH_B2 23
-#define PIN_TURBO_SWITCH_B3 24
-#define PIN_TURBO_SWITCH_B4 25
-#define PIN_TURBO_SWITCH_L1 26
-#define PIN_TURBO_SWITCH_R1 27
-#define PIN_TURBO_SWITCH_L2 29
-#define PIN_TURBO_SWITCH_R2 21
+#define PIN_TURBO_SWITCH_B1 20     // A button
+#define PIN_TURBO_SWITCH_B2 23     // B button
+#define PIN_TURBO_SWITCH_B3 24     // X button
+#define PIN_TURBO_SWITCH_B4 25     // Y button
+#define PIN_TURBO_SWITCH_L1 26     // L1 button
+#define PIN_TURBO_SWITCH_R1 27     // R1 button
+#define PIN_TURBO_SWITCH_L2 0      // L2 button (verify)
+#define PIN_TURBO_SWITCH_R2 1      // R2 button (verify)
 
 // Map switches to button masks
 #define TURBO_SWITCH_MASK_B1 GAMEPAD_MASK_B1
 #define TURBO_SWITCH_MASK_B2 GAMEPAD_MASK_B2
-// ... etc
+#define TURBO_SWITCH_MASK_B3 GAMEPAD_MASK_B3
+#define TURBO_SWITCH_MASK_B4 GAMEPAD_MASK_B4
+#define TURBO_SWITCH_MASK_L1 GAMEPAD_MASK_L1
+#define TURBO_SWITCH_MASK_R1 GAMEPAD_MASK_R1
+#define TURBO_SWITCH_MASK_L2 GAMEPAD_MASK_L2
+#define TURBO_SWITCH_MASK_R2 GAMEPAD_MASK_R2
 ```
 
 ### 3. Optional: Visual Feedback
@@ -269,7 +393,7 @@ GP2040-CE's existing turbo implementation already includes support for 4 additio
 
 ### Why This Works
 
-1. **GPIO Availability**: The RP2040 has 26-30 usable GPIO pins (depending on board). The Sky 2040 likely has several unused pins that can be allocated to switches.
+1. **GPIO Availability**: The RP2040 has 26-30 usable GPIO pins (depending on board). Based on the pinout analysis, the Sky 2040 has at least 8-9 available pins for custom features.
 
 2. **Polling Speed**: GP2040-CE operates at 1000Hz (1ms) polling rate, so reading 8 additional GPIO pins adds negligible overhead (~8 microseconds).
 
@@ -283,27 +407,26 @@ The NES Advantage controller featured adjustable turbo controls for A and B butt
 
 Modern controllers like the 8BitDo Arcade Stick implement turbo by holding a button and pressing a star button to activate turbo functionality, but this requires memorizing which buttons have turbo enabled. Physical switches provide immediate visual and tactile feedback.
 
-### Pin Budget Analysis
+### Pin Budget Analysis for Sky 2040
 
 **Required Pins**:
 - 8 pins for turbo enable switches (one per button)
-- 1 ADC pin for speed dial (GPIO 26-29)
+- 1 ADC pin for speed dial (GPIO 28 recommended)
 - **Total: 9 GPIO pins**
 
-**Typical Sky 2040 Usage** (estimated):
-- 4 face buttons (B1-B4): 4 pins
-- 4 shoulder buttons (L1-L2, R1-R2): 4 pins  
-- 4 directions: 4 pins
-- Start/Select (S1-S2): 2 pins
-- L3/R3: 2 pins (if used)
-- Home/Capture: 2 pins (if used)
-- RGB LED data: 1 pin
-- I2C Display (SDA/SCL): 2 pins
-- **Subtotal: ~21 pins**
+**Sky 2040 Usage** (based on pinout):
+- 8 face/shoulder buttons (B1-B4, L1-L2, R1-R2): GPIOs 2-9
+- 4 directions: GPIOs 16-19
+- Start/Select: GPIOs 12-13
+- L3/R3: GPIOs 10-11
+- Home/Turbo: GPIOs 14-15
+- I2C Display (SDA/SCL): GPIOs 21-22 (optional)
+- RGB LED: GPIO 29 (optional)
+- **Used: ~20-22 pins**
 
-**Remaining**: ~8-9 pins available (depending on exact board configuration)
-
-✅ **This fits perfectly within the pin budget!**
+**Available for turbo features**:
+- GPIOs 0, 1, 20, 23-28 (8-9 pins available)
+- **Perfect fit!** ✅
 
 ### Switch Wiring Simplification
 
@@ -316,6 +439,11 @@ Example compact layout:
 │ [5][6][7][8]       │  Labeled: B1 B2 B3 B4
 │                     │           L1 L2 R1 R2
 └─────────────────────┘
+
+Physical mounting options:
+- On top panel of controller enclosure
+- Side panel for easy access
+- Via 5P expansion socket with custom PCB
 ```
 
 ### Alternative: GPIO Expander
@@ -324,6 +452,7 @@ If GPIO pins are scarce, consider using an I2C GPIO expander (PCF8574):
 - GP2040-CE already supports the PCF8574 IO Expander add-on
 - Provides 8 additional GPIO pins via I2C (only uses 2 pins: SDA/SCL)
 - Slightly higher latency (~1-2ms) but acceptable for turbo switches
+- Would share I2C bus with OLED display if present
 
 ---
 
@@ -395,21 +524,21 @@ Key sections to customize:
 
 ### Phase 1: Board Configuration (Priority: High)
 1. ✅ Study existing codebase
-2. ⬜ Create `configs/Sky2040/BoardConfig.h`
-3. ⬜ Map GPIO pins based on Sky 2040 hardware
+2. ⬜ Create `configs/Sky2040/BoardConfig.h` (or use existing if available)
+3. ⬜ Map GPIO pins based on Sky 2040 hardware pinout
 4. ⬜ Test basic build and flashing
 5. ⬜ Verify all buttons and features work
 
 ### Phase 2: Hardware Integration - Turbo Speed Dial (Priority: High)
-1. ⬜ Select and wire potentiometer to ADC pin (GPIO 26-29)
-2. ⬜ Configure `PIN_SHMUP_DIAL` in BoardConfig.h
+1. ⬜ Select and wire potentiometer to GPIO 28 (ADC2)
+2. ⬜ Configure `PIN_SHMUP_DIAL 28` in BoardConfig.h
 3. ⬜ Test existing dial functionality (already implemented!)
 4. ⬜ Calibrate speed range to feel right (2-30 shots/sec)
 5. ⬜ Optional: Add dial position indicator on OLED
 
 ### Phase 3: Hardware Integration - Per-Button Turbo Switches (Priority: High)
-1. ⬜ Design physical switch layout (8 SPST toggle switches)
-2. ⬜ Identify 8 available GPIO pins on Sky 2040
+1. ⬜ Design physical switch layout (8 SPST toggle switches or DIP-8 array)
+2. ⬜ Verify GPIO pin availability (GPIOs 0, 1, 20, 23-27)
 3. ⬜ Wire switches to GPIO pins (active-low with pull-up)
 4. ⬜ Extend turbo.cpp to read switch states
 5. ⬜ Map switch states to button turbo masks
@@ -566,54 +695,63 @@ class TurboInput : public GPAddon {
 
 ## Hardware Considerations
 
-### ADC Pin Usage for Slider
-The RP2040 has 4 ADC-capable pins (GPIO 26-29). The Sky 2040 may have some already assigned:
-- Check existing schematic/documentation
-- Consider using GPIO 28 (currently shown as turbo in Pico config)
-- May need hardware modification to add physical potentiometer
+### ADC Pin Usage for Turbo Dial
+The RP2040 has 4 ADC-capable pins (GPIO 26-29). For the Sky 2040:
+- **GPIO 28 (ADC2)**: **RECOMMENDED** for turbo speed dial
+- GPIO 26 (ADC0): Alternative option
+- GPIO 27 (ADC1): Alternative option
+- GPIO 29 (ADC3): May be used for RGB LED
 
 ### LED Feedback Options
-1. **RGB LEDs**: Per-button RGB for turbo state indication
+1. **RGB LEDs**: Per-button RGB for turbo state indication (if GPIO 29 available)
 2. **Single LED**: Global turbo activity indicator (already supported)
-3. **OLED Display**: Show turbo speed and enabled buttons
+3. **OLED Display**: Show turbo speed and enabled buttons (uses I2C on GPIO 21-22)
 
-### Button Matrix
-- Ensure GPIO pins chosen don't conflict with button matrix
-- Consider using available pins in the 5P expansion socket
+### Physical Switch Mounting
+Consider these mounting options:
+1. **Top panel**: DIP-8 switch array for easy access
+2. **Side panel**: Individual toggle switches
+3. **5P expansion socket**: Custom PCB with switches
+4. **Internal**: Hidden switches activated by external slider/lever mechanism
 
 ---
 
 ## Next Steps
 
 ### Immediate Actions
-1. **Verify hardware**: Map exact GPIO connections on Sky 2040
-2. **Test stock firmware**: Flash official GP2040-CE to ensure board works
-3. **Create board config**: Set up `configs/Sky2040/` directory
-4. **Build and test**: Compile custom config and verify basic functionality
+1. **Verify hardware**: Confirm GPIO pinout matches images on actual Sky 2040 board
+2. **Check existing configs**: Look for existing Sky2040 board configuration in GP2040-CE repo
+3. **Order components**:
+   - 10kΩ linear potentiometer (rotary or slide)
+   - DIP-8 switch array OR 8× SPST mini toggle switches
+   - Optional: Breakout PCB for clean wiring
+4. **Test stock firmware**: Flash official GP2040-CE to ensure board works
 
 ### Development Environment Setup
 ```bash
-# Clone your fork (already done)
+# Already done - project location
 cd /Users/fwong/Documents/github/wongfei2009/GP2040-CE
 
-# Install Pico SDK (if not already)
+# Update submodules (Pico SDK)
 git submodule update --init --recursive
 
-# Install build tools (macOS)
+# Install build tools (macOS) - if not already installed
 brew install cmake
 brew install gcc-arm-embedded
 
 # Set up environment
-export PICO_SDK_PATH=/path/to/pico-sdk
+export PICO_SDK_PATH=$(pwd)/lib/pico-sdk
 export GP2040_BOARDCONFIG=Sky2040
 ```
 
-### Questions to Answer
-1. What GPIO pins are available/unused on Sky 2040?
-2. Does the board have ADC-accessible pins exposed?
-3. What LED capabilities exist (individual RGB or single indicator)?
-4. Are there any existing hardware turbo implementations to reference?
-5. What is the target user experience for turbo control?
+### Questions to Resolve
+- [ ] Are GPIOs 0, 1, 20, 23-27 actually available/unused?
+- [ ] Is I2C (GPIO 21-22) in use for OLED display?
+- [ ] Which GPIO is used for RGB LED data?
+- [ ] Physical space available for switch mounting?
+- [ ] Preference for rotary pot vs slide pot for speed dial?
+- [ ] DIP switch array vs individual toggle switches?
+- [ ] Does an existing Sky2040 config already exist in GP2040-CE?
 
 ---
 
@@ -621,6 +759,6 @@ export GP2040_BOARDCONFIG=Sky2040
 
 This project aims to enhance the already-excellent GP2040-CE firmware with advanced hardware-based turbo features specifically tailored for the Sky 2040 board. By implementing a physical turbo speed dial and per-button turbo toggle switches, we can create a more intuitive and flexible turbo system that benefits both competitive players and casual users.
 
-The modular nature of GP2040-CE's add-on system makes these enhancements feasible without disrupting core functionality, and the changes can potentially be contributed back to benefit the entire community.
+The detailed pinout analysis from the hardware images confirms that the Sky 2040 has sufficient GPIO pins available for this implementation. The modular nature of GP2040-CE's add-on system makes these enhancements feasible without disrupting core functionality, and the changes can potentially be contributed back to benefit the entire community.
 
 **Ready to start coding!** 🚀
