@@ -1,678 +1,516 @@
 # Sky 2040 GP2040-CE Turbo Enhancement Project
 
 ## Quick Summary
+**Goal**: Add hardware-based turbo controls to Sky 2040 joystick
+- ✅ Analog turbo speed dial (potentiometer, 2-30 shots/sec)
+- ✅ 8 per-button turbo switches (B1-B4, L1-L2, R1-R2)
+- **Strategy**: Build on existing Pico config (98% compatible)
+- **GPIO Required**: 9 pins (1 ADC + 8 digital) - ALL AVAILABLE ✅
+- **Trade-off**: RGB LEDs disabled to free GPIO 28 for R2 switch
 
-**Goal**: Add hardware-based turbo controls to Sky 2040 joystick board
-- ✅ **Analog turbo speed dial** (potentiometer, 2-30 shots/sec)
-- ✅ **8 per-button turbo switches** (physical toggles for B1-B4, L1-L2, R1-R2)
-
-**Strategy**: Build on existing Pico-based config (98% compatible)
-**GPIO Required**: 9 pins (1 ADC + 8 digital) - ALL AVAILABLE ✅
-**Performance Impact**: Negligible (<2% overhead)
-
----
-
-## Project Overview
-
-This document provides comprehensive context for enhancing the GP2040-CE firmware on the Sky 2040 joystick board with custom hardware-based turbo features using analog speed control and physical per-button toggle switches.
-
-### Project Location
-- **Fork Repository**: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
-- **Upstream**: OpenStickCommunity/GP2040-CE (GitHub)
+## Project Location
+- **Fork**: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
+- **Upstream**: OpenStickCommunity/GP2040-CE
 
 ---
 
-## Sky 2040 Actual Configuration (VERIFIED)
+## Sky 2040 Configuration (Verified from Backup)
 
-### Configuration Source
-**Based on**: Actual device backup (`gp2040ce_backup_20251112061231421.gp2040`)
-**Board Type**: Pico-variant (98% match with standard Pico config)
-**Only Difference**: GPIO 2 and 3 are swapped for UP/DOWN buttons
+### Base Configuration
+- **Board Type**: Pico-variant (98% match)
+- **Only Difference**: GPIO 2/3 swapped for UP/DOWN
+- **Source**: `gp2040ce_backup_20251112061231421.gp2040`
 
-### Confirmed Pin Mappings
+### Pin Mappings
 
-#### Button Assignments (Active-Low with Pull-Up)
-| Button | GPIO Pin | Function | Verified |
-|--------|----------|----------|----------|
-| **B1** (A/Cross) | 6 | Face button | ✅ |
-| **B2** (B/Circle) | 7 | Face button | ✅ |
-| **B3** (X/Square) | 10 | Face button | ✅ |
-| **B4** (Y/Triangle) | 11 | Face button | ✅ |
-| **L1** | 13 | Shoulder button | ✅ |
-| **R1** | 12 | Shoulder button | ✅ |
-| **L2** | 9 | Trigger button | ✅ |
-| **R2** | 8 | Trigger button | ✅ |
-| **Up** | 3 | D-pad | ✅ |
-| **Down** | 2 | D-pad | ✅ |
-| **Left** | 5 | D-pad | ✅ |
-| **Right** | 4 | D-pad | ✅ |
-| **Select** (S1) | 16 | System button | ✅ |
-| **Start** (S2) | 17 | System button | ✅ |
-| **L3** | 18 | Stick button | ✅ |
-| **R3** | 19 | Stick button | ✅ |
-| **Home** (A1) | 20 | PS/Guide button | ✅ |
-| **Capture** (A2) | 21 | Capture button | ✅ |
-| **Turbo** | 14 | Turbo toggle | ✅ |
+#### Buttons (Active-Low with Pull-Up)
+| Button | GPIO | Function | Notes |
+|--------|------|----------|-------|
+| B1 (A/Cross) | 6 | Face button | Turbo-capable |
+| B2 (B/Circle) | 7 | Face button | Turbo-capable |
+| B3 (X/Square) | 10 | Face button | Turbo-capable |
+| B4 (Y/Triangle) | 11 | Face button | Turbo-capable |
+| L1 | 13 | Shoulder | Turbo-capable |
+| R1 | 12 | Shoulder | Turbo-capable |
+| L2 | 9 | Trigger | Turbo-capable |
+| R2 | 8 | Trigger | Turbo-capable |
+| Up | 3 | D-pad | ⚠️ Swapped vs Pico |
+| Down | 2 | D-pad | ⚠️ Swapped vs Pico |
+| Left | 5 | D-pad | |
+| Right | 4 | D-pad | |
+| Select (S1) | 16 | System | |
+| Start (S2) | 17 | System | |
+| L3 | 18 | Stick | |
+| R3 | 19 | Stick | |
+| Home (A1) | 20 | PS/Guide | |
+| Capture (A2) | 21 | Capture | |
+| Turbo | 14 | Turbo toggle | Existing button |
 
-#### Peripheral Assignments
-```json
-Display (I2C):
-  - I2C Bus: I2C0
-  - SDA: GPIO 0
-  - SCL: GPIO 1
-  - Speed: 400kHz
-  - Address: 0x3C
-
-RGB LEDs:
-  - Data Pin: GPIO 28
-  - Format: GRB (ledFormat: 0)
-  - Layout: 8-button
-  - LEDs per button: 1
-  - Max brightness: 50
-
-Turbo:
-  - Button Pin: GPIO 14
-  - LED Pin: -1 (disabled)
-  - Shot Count: 15
-  - Enabled: Yes
-```
-
-#### Available GPIO Pins for Custom Features
-
-**Completely Free GPIOs** (not assigned in config):
-- **GPIO 15**: Originally turbo LED, but disabled (-1) ✅ FREE
-- **GPIO 22**: Unassigned ✅ FREE
-- **GPIO 23**: Unassigned ✅ FREE
-- **GPIO 24**: Unassigned ✅ FREE
-- **GPIO 25**: Unassigned ✅ FREE
-- **GPIO 26**: ADC0 - Unassigned ✅ FREE (best for speed dial)
-- **GPIO 27**: ADC1 - Unassigned ✅ FREE
-- **GPIO 29**: ADC3 - Unassigned ✅ FREE
-
-**Total Available**: 8 digital + 3 ADC-capable pins
-**Required for Project**: 8 digital + 1 ADC
-**Status**: ✅ **PERFECT FIT!**
+#### Peripherals
+- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C
+- **RGB LEDs**: ~~Data=GPIO28~~ **DISABLED** (GPIO freed for R2 switch)
+- **Turbo Button**: GPIO14 (LED disabled)
 
 ---
 
-## Revised Project Strategy
-
-### ✅ NEW APPROACH: Minimal Config Changes
-
-Instead of creating a completely new board config, we'll:
-
-1. **Use Standard Pico Config as Base**
-   - Sky2040 is 98% compatible with Pico config
-   - Only difference: GPIO 2/3 swap (UP/DOWN)
-   - Can be handled via web configurator OR minimal BoardConfig
-
-2. **Create Sky2040 BoardConfig (Minimal Delta)**
-   - Copy from `configs/Pico/BoardConfig.h`
-   - Swap GPIO 2 ↔ 3 for UP/DOWN
-   - Add new turbo switch definitions
-   - Keep everything else identical
-
-3. **Extend Turbo Add-on (Core Firmware Changes)**
-   - Modify `src/addons/turbo.cpp` to support per-button switches
-   - Add configuration for switch GPIO pins
-   - Reuse existing turbo speed dial support (`pinShmupDial`)
-
-### ✅ ADVANTAGES of This Approach
-
-**Benefits:**
-- ✅ Minimal changes to existing codebase
-- ✅ Leverages proven Pico config
-- ✅ Upstream-compatible (easier to merge back)
-- ✅ Easy to maintain across GP2040-CE updates
-- ✅ Clear separation: board-specific vs feature-specific code
-
-**What Changed from Original Plan:**
-- ❌ No need to reverse-engineer pinout (already confirmed)
-- ❌ No need to create config from scratch (Pico is 98% match)
-- ✅ Focus on turbo feature enhancement only
-- ✅ Simpler hardware integration
-
----
-
-## Hardware Implementation Plan
+## Hardware Implementation
 
 ### Turbo Speed Dial (Analog Potentiometer)
+**Component**: 10kΩ linear potentiometer (rotary or slide)
 
-**Hardware:**
-- 10kΩ linear potentiometer (rotary or slide)
-- GPIO 26 (ADC0) - recommended for analog input
-
-**Wiring:**
+**Wiring**:
 ```
 Potentiometer:
-  Pin 1 (CCW/one end) → GND
-  Pin 2 (Wiper)       → GPIO 26 (ADC0)
-  Pin 3 (CW/other end)→ 3.3V
+  Pin 1 (CCW/Left)  → GND
+  Pin 2 (Wiper)     → GPIO 26 (ADC0)
+  Pin 3 (CW/Right)  → 3.3V
 ```
 
-**Software Support:**
-- ✅ Already supported via `pinShmupDial` in turbo addon
-- ✅ Just need to set: `"pinShmupDial": 26` in config
-- ✅ Real-time speed adjustment without button combos
+**Software**: Already supported via `pinShmupDial` in existing turbo addon
 
-### Per-Button Turbo Switches (8 Toggle Switches)
+### Per-Button Turbo Switches (8× SPST Toggles)
+**Component**: 8× SPST toggle switches OR 1× DIP-8 switch array
 
-**Hardware:**
-- 8× SPST toggle switches (or 1× DIP-8 switch array)
-- One switch per button: B1, B2, B3, B4, L1, R1, L2, R2
-
-**Recommended Pin Assignment:**
+**Pin Assignment**:
 ```
-GPIO 15 → B1 (A/Cross) turbo switch
-GPIO 22 → B2 (B/Circle) turbo switch
-GPIO 23 → B3 (X/Square) turbo switch
-GPIO 24 → B4 (Y/Triangle) turbo switch
-GPIO 25 → L1 turbo switch
-GPIO 27 → R1 turbo switch
-GPIO 29 → L2 turbo switch
-GPIO ?? → R2 turbo switch (need one more GPIO)
+GPIO 15 → B1 (A/Cross)    turbo enable
+GPIO 22 → B2 (B/Circle)   turbo enable
+GPIO 23 → B3 (X/Square)   turbo enable
+GPIO 24 → B4 (Y/Triangle) turbo enable
+GPIO 25 → L1              turbo enable
+GPIO 27 → R1              turbo enable
+GPIO 28 → R2              turbo enable  ⚠️ RGB LEDs sacrificed
+GPIO 29 → L2              turbo enable
 ```
 
-**Wait - We Need 8 GPIOs, but listed 7 above. Let me recount available pins:**
-
-From the actual config analysis:
-- GPIOs 0-21: ALL ASSIGNED to buttons/peripherals
-- GPIO 22-27: AVAILABLE (that's 6 pins)
-- GPIO 28: LED data (used)
-- GPIO 29: AVAILABLE (1 pin)
-- GPIO 15: Turbo LED disabled, so AVAILABLE (1 pin)
-
-**Total Available: 8 pins exactly!**
-
-**Corrected Pin Assignment:**
+**Wiring per Switch** (Active-Low):
 ```
-GPIO 15 → B1 (A/Cross) turbo switch
-GPIO 22 → B2 (B/Circle) turbo switch
-GPIO 23 → B3 (X/Square) turbo switch
-GPIO 24 → B4 (Y/Triangle) turbo switch
-GPIO 25 → L1 turbo switch
-GPIO 26 → R1 turbo switch
-GPIO 27 → L2 turbo switch
-GPIO 29 → R2 turbo switch
-```
-
-**Wait - GPIO 26 was for speed dial!**
-
-Let me fix this properly:
-```
-Speed Dial:
-  GPIO 26 (ADC0) → Potentiometer for turbo speed
-
-Turbo Switches:
-  GPIO 15 → B1 (A/Cross)
-  GPIO 22 → B2 (B/Circle)
-  GPIO 23 → B3 (X/Square)
-  GPIO 24 → B4 (Y/Triangle)
-  GPIO 25 → L1
-  GPIO 27 → R1 (ADC1 used as digital)
-  GPIO 29 → L2 (ADC3 used as digital)
-  GPIO ?? → R2 (PROBLEM: We're one pin short!)
-```
-
-**Solution Options:**
-1. Don't use turbo LED (GPIO 15) - use for R2 switch ✅
-2. Use GPIO 27 or 29 as digital instead of GPIO 26 for dial
-3. Only implement 7 turbo switches (skip R2)
-
-**Best Solution:**
-```
-Speed Dial (needs ADC):
-  GPIO 27 (ADC1) → Potentiometer
-
-Turbo Switches (need digital):
-  GPIO 15 → B1
-  GPIO 22 → B2
-  GPIO 23 → B3
-  GPIO 24 → B4
-  GPIO 25 → L1
-  GPIO 26 → R1 (can be digital)
-  GPIO 29 → L2 (can be digital)
-  GPIO ?? → R2 (still one short!)
-```
-
-Hmm, we're still one GPIO short. Let me check what GPIO 28 status is...
-
-From config: GPIO 28 is LED data output. If we don't use RGB LEDs, it's available!
-
-**Final Decision Required:** Choose ONE:
-**Option A - Keep RGB LEDs, 7 Turbo Switches:**
-- Speed Dial: GPIO 26 (ADC0)
-- Switches: B1, B2, B3, B4, L1, R1, L2 only (skip R2)
-- RGB LEDs: Keep on GPIO 28
-
-**Option B - Sacrifice RGB LEDs, 8 Turbo Switches:**
-- Speed Dial: GPIO 26 (ADC0)
-- Switches: All 8 buttons
-- RGB LEDs: Disabled (GPIO 28 freed for R2 switch)
-
-**Option C - 8 Switches, No Speed Dial:**
-- All 8 GPIOs for switches
-- Use hotkeys (D-pad + Turbo) for speed adjustment
-- Keep RGB LEDs
-
-**Recommended: Option B** - Full turbo coverage more important than RGB LEDs
-
-### Final Pin Assignment (Option B)
-
-```
-Analog Input (Speed Dial):
-  GPIO 26 (ADC0) → 10kΩ potentiometer wiper
-
-Digital Inputs (Turbo Switches):
-  GPIO 15 → B1 (A/Cross) turbo enable
-  GPIO 22 → B2 (B/Circle) turbo enable
-  GPIO 23 → B3 (X/Square) turbo enable
-  GPIO 24 → B4 (Y/Triangle) turbo enable
-  GPIO 25 → L1 turbo enable
-  GPIO 27 → R1 turbo enable
-  GPIO 28 → R2 turbo enable (RGB LEDs sacrificed)
-  GPIO 29 → L2 turbo enable
-```
-
-**Wiring for Each Switch:**
-```
-Switch N:
-  Terminal 1 → GPIO pin (15, 22-25, 27-29)
+Each Switch:
+  Terminal 1 → GPIO pin (from table above)
   Terminal 2 → GND
   (Internal pull-up resistor enabled in firmware)
 
-When switch CLOSED (ON): GPIO reads LOW → Turbo enabled for that button
-When switch OPEN (OFF): GPIO reads HIGH → Normal button operation
+Logic:
+  Switch CLOSED (ON)  = GPIO reads LOW  = Turbo ENABLED
+  Switch OPEN (OFF)   = GPIO reads HIGH = Normal operation
 ```
+
+### Complete GPIO Allocation
+| GPIO | Original Function | New Function | Status |
+|------|-------------------|--------------|--------|
+| 26 | Unassigned | Speed Dial (ADC) | ✅ Used |
+| 15 | Turbo LED (disabled) | B1 Switch | ✅ Repurposed |
+| 22 | Unassigned | B2 Switch | ✅ Used |
+| 23 | Unassigned | B3 Switch | ✅ Used |
+| 24 | Unassigned | B4 Switch | ✅ Used |
+| 25 | Unassigned | L1 Switch | ✅ Used |
+| 27 | Unassigned | R1 Switch | ✅ Used |
+| 28 | RGB LED Data | R2 Switch | ⚠️ **RGB DISABLED** |
+| 29 | Unassigned | L2 Switch | ✅ Used |
+
+**Total Used**: 9 GPIOs (1 ADC + 8 digital) = Perfect fit! ✅
 
 ---
 
-## Software Implementation Plan
+## Software Implementation
 
-### Phase 1: Create Sky2040 Board Config ✅ UPDATED
-
+### Phase 1: Create Sky2040 BoardConfig
 **File**: `configs/Sky2040/BoardConfig.h`
 
-**Changes from Pico config:**
-1. Swap GPIO 2 ↔ 3 for UP/DOWN
-2. Disable RGB LEDs if using Option B (change GPIO 28)
-3. Add turbo switch pin definitions
-4. Configure turbo speed dial pin
-
-**Estimated Time**: 30 minutes
-**Complexity**: Low (mostly copy-paste)
-
-### Phase 2: Extend Turbo Add-on ⚠️ UPDATED
-
-**Files to Modify:**
-- `src/addons/turbo.cpp` - Core turbo logic
-- `headers/addons/turbo.h` - Add switch configuration structures
-- `proto/config.proto` - Add switch pin config fields (optional, for web config)
-
-**New Functionality:**
-1. **Switch Polling**: Read 8 GPIO pins every cycle
-2. **Per-Button Enable**: Apply hardware turbo masks
-3. **Speed Dial**: Already supported, just configure `pinShmupDial`
-
-**Implementation Approach:**
+**Key Changes from Pico**:
 ```cpp
-// In turbo.h - Add configuration structure
+// Board identification
+#define BOARD_CONFIG_LABEL "Sky2040"
+
+// D-pad GPIO swap (Sky2040-specific)
+#define GPIO_PIN_02 GpioAction::BUTTON_PRESS_DOWN  // Swapped
+#define GPIO_PIN_03 GpioAction::BUTTON_PRESS_UP    // Swapped
+
+// Disable RGB LEDs (GPIO 28 freed for R2 switch)
+#define BOARD_LEDS_PIN -1  // Disabled
+
+// Turbo speed dial
+#define PIN_SHMUP_DIAL 26  // ADC0
+
+// Per-button turbo switches
+#define TURBO_SWITCH_ENABLED 1
+#define PIN_TURBO_SWITCH_B1 15  // B1 (A/Cross)
+#define PIN_TURBO_SWITCH_B2 22  // B2 (B/Circle)
+#define PIN_TURBO_SWITCH_B3 23  // B3 (X/Square)
+#define PIN_TURBO_SWITCH_B4 24  // B4 (Y/Triangle)
+#define PIN_TURBO_SWITCH_L1 25  // L1
+#define PIN_TURBO_SWITCH_R1 27  // R1
+#define PIN_TURBO_SWITCH_R2 28  // R2 (was RGB LED)
+#define PIN_TURBO_SWITCH_L2 29  // L2
+```
+
+### Phase 2: Extend Turbo Add-on
+**Files**: `src/addons/turbo.cpp`, `headers/addons/turbo.h`
+
+**New Structure in turbo.h**:
+```cpp
+// Per-button turbo switch configuration
 struct TurboSwitchConfig {
     int8_t switchPins[8];        // GPIO pins for 8 switches
     uint16_t buttonMasks[8];     // Button masks (GAMEPAD_MASK_B1, etc.)
 };
+```
 
-// In turbo.cpp - Add switch polling to process()
-void TurboInput::process() {
-    // Read hardware turbo switches
-    uint16_t hardwareTurboMask = 0;
+**Modified Logic in turbo.cpp**:
+```cpp
+// In setup() - Initialize switch GPIOs
+void TurboInput::setup() {
+    // ... existing setup code ...
+    
+    #ifdef TURBO_SWITCH_ENABLED
+    // Initialize hardware turbo switches (active-low with pull-up)
+    const int8_t switchPins[] = {
+        PIN_TURBO_SWITCH_B1, PIN_TURBO_SWITCH_B2, 
+        PIN_TURBO_SWITCH_B3, PIN_TURBO_SWITCH_B4,
+        PIN_TURBO_SWITCH_L1, PIN_TURBO_SWITCH_R1,
+        PIN_TURBO_SWITCH_R2, PIN_TURBO_SWITCH_L2
+    };
+    
     for (uint8_t i = 0; i < 8; i++) {
         if (switchPins[i] >= 0) {
-            // Active-low: switch ON = LOW = turbo enabled
-            if (!gpio_get(switchPins[i])) {
-                hardwareTurboMask |= buttonMasks[i];
-            }
+            gpio_init(switchPins[i]);
+            gpio_set_dir(switchPins[i], GPIO_IN);
+            gpio_pull_up(switchPins[i]);  // Active-low
+        }
+    }
+    #endif
+}
+
+// In process() - Read hardware switches
+void TurboInput::process() {
+    #ifdef TURBO_SWITCH_ENABLED
+    // Read hardware turbo switches (active-low)
+    uint16_t hardwareTurboMask = 0;
+    const int8_t switchPins[] = {
+        PIN_TURBO_SWITCH_B1, PIN_TURBO_SWITCH_B2,
+        PIN_TURBO_SWITCH_B3, PIN_TURBO_SWITCH_B4,
+        PIN_TURBO_SWITCH_L1, PIN_TURBO_SWITCH_R1,
+        PIN_TURBO_SWITCH_R2, PIN_TURBO_SWITCH_L2
+    };
+    const uint16_t buttonMasks[] = {
+        GAMEPAD_MASK_B1, GAMEPAD_MASK_B2,
+        GAMEPAD_MASK_B3, GAMEPAD_MASK_B4,
+        GAMEPAD_MASK_L1, GAMEPAD_MASK_R1,
+        GAMEPAD_MASK_R2, GAMEPAD_MASK_L2
+    };
+    
+    for (uint8_t i = 0; i < 8; i++) {
+        if (switchPins[i] >= 0 && !gpio_get(switchPins[i])) {
+            hardwareTurboMask |= buttonMasks[i];
         }
     }
     
-    // Override software turbo state with hardware switches
+    // Hardware switches override software turbo settings
     turboButtonsMask = hardwareTurboMask;
+    #endif
     
-    // Continue with existing turbo flicker logic...
+    // Continue with existing turbo flicker logic
     // (speed dial already supported via pinShmupDial)
+    // ... existing turbo processing code ...
 }
 ```
 
-**Estimated Time**: 2-4 hours
-**Complexity**: Medium (requires understanding existing turbo code)
-
-### Phase 3: Testing & Validation
-
-**Hardware Tests:**
-1. ✅ Verify each switch controls correct button
-2. ✅ Test speed dial adjustment (2-30 shots/sec range)
-3. ✅ Verify no interference with normal button operation
-4. ✅ Test turbo LED feedback (if kept)
-5. ✅ Latency testing (should be <1ms impact)
-
-**Software Tests:**
-1. ✅ All button combinations work
-2. ✅ Turbo activates/deactivates instantly on switch toggle
-3. ✅ Speed dial updates in real-time
-4. ✅ No crashes or firmware hangs
-5. ✅ Settings persist across reboots
-
-**Cross-Platform Tests:**
-1. ✅ PC (XInput mode)
-2. ✅ Nintendo Switch
-3. ✅ PS4/PS5 (if dongle available)
-4. ✅ Steam Deck
-
 ---
 
-## Implementation Roadmap (REVISED)
+## Implementation Roadmap
 
-### ✅ Phase 1: Minimal BoardConfig Setup (NEW!)
-**Goal**: Get Sky2040 building with correct pin mappings
-**Estimated Time**: 1 hour
-
-**Tasks:**
-1. ✅ Create `configs/Sky2040/BoardConfig.h`
-   - Copy from `configs/Pico/BoardConfig.h`
+### Phase 1: BoardConfig Setup ⏱️ 1 hour
+**Tasks**:
+1. Create `configs/Sky2040/` directory
+2. Copy `configs/Pico/BoardConfig.h` → `configs/Sky2040/BoardConfig.h`
+3. Apply changes:
    - Swap GPIO 2 ↔ 3
-   - Set board label: `#define BOARD_CONFIG_LABEL "Sky2040"`
-2. ✅ Create `configs/Sky2040/README.md`
-   - Document pin mappings
-   - Note differences from Pico
-3. ✅ Test basic build
+   - Set `BOARD_CONFIG_LABEL "Sky2040"`
+   - Disable RGB: `#define BOARD_LEDS_PIN -1`
+   - Add turbo switch pin definitions
+   - Enable speed dial: `#define PIN_SHMUP_DIAL 26`
+4. Create `configs/Sky2040/README.md` with pin documentation
+5. Test build:
    ```bash
    export GP2040_BOARDCONFIG=Sky2040
-   mkdir build && cd build
-   cmake ..
-   make -j$(sysctl -n hw.ncpu)
+   cd build && cmake .. && make -j$(sysctl -n hw.ncpu)
    ```
-4. ✅ Flash and verify all buttons work
 
-**Success Criteria:**
-- ✅ Firmware builds without errors
+**Success Criteria**:
+- ✅ Builds without errors
 - ✅ All buttons respond correctly
 - ✅ Display shows properly
-- ✅ RGB LEDs work (or disabled cleanly)
 
----
-
-### ✅ Phase 2: Hardware Preparation
-**Goal**: Wire turbo switches and speed dial
-**Estimated Time**: 2-3 hours
-
-**Tasks:**
-1. ✅ Choose hardware option (A, B, or C)
-2. ✅ Acquire components:
+### Phase 2: Hardware Preparation ⏱️ 2-3 hours
+**Tasks**:
+1. Acquire components:
    - 8× SPST toggle switches OR 1× DIP-8 switch array
-   - 1× 10kΩ linear potentiometer
+   - 1× 10kΩ linear potentiometer (rotary or slide)
    - Jumper wires / breadboard for prototyping
-3. ✅ Wire speed dial to GPIO 26
-4. ✅ Wire 8 switches to assigned GPIOs
-5. ✅ Test continuity and connections
-6. ✅ Verify no shorts to 3.3V or 5V
+2. Wire speed dial:
+   - Pin 1 → GND
+   - Pin 2 (wiper) → GPIO 26
+   - Pin 3 → 3.3V
+3. Wire turbo switches (all active-low):
+   - Switch terminal 1 → respective GPIO (15, 22-25, 27-29)
+   - Switch terminal 2 → GND
+4. Verify connections:
+   - Test continuity with multimeter
+   - Check for shorts to 3.3V or 5V
+   - Confirm switches toggle cleanly
 
-**Success Criteria:**
+**Success Criteria**:
 - ✅ All switches toggle cleanly
-- ✅ Potentiometer sweeps full range
+- ✅ Potentiometer sweeps full range (0-3.3V)
 - ✅ No electrical shorts
-- ✅ Connections are secure
+- ✅ Connections secure
 
----
+### Phase 3: Speed Dial Integration ⏱️ 1 hour
+**Tasks**:
+1. Verify `PIN_SHMUP_DIAL 26` in BoardConfig
+2. Rebuild firmware
+3. Flash to Sky2040
+4. Test in web configurator:
+   - Navigate to Add-Ons → Turbo
+   - Rotate dial, observe speed change
+5. Calibrate range to 2-30 shots/sec
 
-### ✅ Phase 3: Turbo Speed Dial Integration
-**Goal**: Get analog speed dial working
-**Estimated Time**: 1 hour
-
-**Tasks:**
-1. ✅ Enable speed dial in BoardConfig:
-   ```cpp
-   #define PIN_SHMUP_DIAL 26  // ADC0
-   ```
-2. ✅ Rebuild firmware
-3. ✅ Test speed dial in web configurator
-4. ✅ Verify speed changes in real-time
-5. ✅ Calibrate min/max range (2-30 shots/sec)
-
-**Success Criteria:**
-- ✅ Turning dial changes turbo speed
-- ✅ Speed updates without lag
+**Success Criteria**:
+- ✅ Turning dial changes turbo speed in real-time
 - ✅ Full 2-30 shots/sec range accessible
 - ✅ No jitter or noise in ADC reading
+- ✅ Speed updates without lag
 
----
-
-### ✅ Phase 4: Per-Button Turbo Switches (CORE WORK)
-**Goal**: Implement hardware turbo switch support
-**Estimated Time**: 4-6 hours
-
-**Tasks:**
-1. ✅ Define switch pins in `configs/Sky2040/BoardConfig.h`:
-   ```cpp
-   // Per-button turbo switches
-   #define TURBO_SWITCH_ENABLED 1
-   #define PIN_TURBO_SWITCH_B1 15
-   #define PIN_TURBO_SWITCH_B2 22
-   #define PIN_TURBO_SWITCH_B3 23
-   #define PIN_TURBO_SWITCH_B4 24
-   #define PIN_TURBO_SWITCH_L1 25
-   #define PIN_TURBO_SWITCH_R1 27
-   #define PIN_TURBO_SWITCH_L2 29
-   #define PIN_TURBO_SWITCH_R2 28  // If RGB disabled
-   ```
-
-2. ✅ Modify `headers/addons/turbo.h`:
-   - Add switch configuration structure
-   - Add button mask mapping array
-
-3. ✅ Modify `src/addons/turbo.cpp`:
-   - Add switch initialization in `setup()`
+### Phase 4: Turbo Switches Implementation ⏱️ 4-6 hours
+**Tasks**:
+1. Add switch definitions to BoardConfig (see Phase 1)
+2. Modify `headers/addons/turbo.h`:
+   - Add `TurboSwitchConfig` structure
+   - Add switch pin array declarations
+3. Modify `src/addons/turbo.cpp`:
+   - Add GPIO initialization in `setup()`
    - Add switch polling in `process()`
-   - Override turbo state based on switch positions
+   - Implement hardware mask override logic
+4. Rebuild and flash firmware
+5. Test each switch independently:
+   - Toggle switch ON → button auto-fires at dial speed
+   - Toggle switch OFF → button operates normally
+6. Test multiple switches simultaneously
+7. Verify turbo works in all input modes (XInput, Switch, etc.)
+8. Performance test: measure input latency impact
 
-4. ✅ Implement GPIO initialization:
-   ```cpp
-   // In TurboInput::setup()
-   for (uint8_t i = 0; i < 8; i++) {
-       if (switchPins[i] >= 0) {
-           gpio_init(switchPins[i]);
-           gpio_set_dir(switchPins[i], GPIO_IN);
-           gpio_pull_up(switchPins[i]);  // Active-low
-       }
-   }
-   ```
-
-5. ✅ Test each switch independently
-6. ✅ Test multiple switches simultaneously
-7. ✅ Verify turbo works in all input modes
-
-**Success Criteria:**
+**Success Criteria**:
 - ✅ Each switch controls correct button's turbo
 - ✅ Switches override software turbo settings
-- ✅ No latency impact (<1ms)
+- ✅ No input latency added (<1ms)
 - ✅ Switches work in all game modes
 - ✅ Clean enable/disable on toggle
+- ✅ Firmware stable under all conditions
 
----
+### Phase 5: Testing & Validation ⏱️ 1-2 hours
+**Hardware Tests**:
+1. Individual button turbo (8 tests)
+2. Multiple button turbo simultaneously
+3. Speed dial adjustment while turbo active
+4. Long-duration stress test (30+ minutes)
+5. Power cycle persistence
 
-### ✅ Phase 5: Web Configurator Integration (OPTIONAL)
-**Goal**: Allow switch configuration via web UI
-**Estimated Time**: 3-4 hours (OPTIONAL)
+**Cross-Platform Tests**:
+1. PC (XInput mode)
+2. Nintendo Switch
+3. PS4/PS5 (if dongle available)
+4. Steam Deck (if available)
 
-**Tasks:**
-1. ⬜ Modify `proto/config.proto`:
-   - Add turbo switch pin fields
-2. ⬜ Update web UI (`www/src/Pages/AddonsConfigPage.tsx`):
-   - Add UI elements for switch pin configuration
-3. ⬜ Test configuration save/load
-4. ⬜ Update documentation
+**Edge Cases**:
+1. All 8 switches ON simultaneously
+2. Rapid switch toggling
+3. Speed dial at min/max extremes
+4. Turbo button press during hardware turbo
 
-**Success Criteria:**
-- ⬜ Pins configurable without recompiling
-- ⬜ Changes saved to flash
-- ⬜ Web UI shows current switch states
+**Success Criteria**:
+- ✅ All tests pass without errors
+- ✅ No crashes or firmware hangs
+- ✅ Consistent behavior across platforms
 
-**Note**: This phase is OPTIONAL. Hardcoded pins in BoardConfig work fine for single-user builds.
-
----
-
-### ✅ Phase 6: Documentation & Polish
-**Goal**: Document everything for future reference
-**Estimated Time**: 2 hours
-
-**Tasks:**
-1. ✅ Update `configs/Sky2040/README.md` with:
+### Phase 6: Documentation ⏱️ 1-2 hours
+**Tasks**:
+1. Update `configs/Sky2040/README.md`:
    - Complete pin mapping table
    - Turbo switch wiring diagram
    - Speed dial wiring diagram
-   - Photos of completed build
-2. ✅ Document turbo switch behavior
-3. ✅ Create usage guide for end users
-4. ✅ Add troubleshooting section
-5. ✅ Update CLAUDE.md with final status
+   - RGB LED trade-off explanation
+2. Document turbo switch behavior
+3. Create usage guide for end users
+4. Add troubleshooting section
+5. Take photos of completed build
+6. Update this CLAUDE.md with final status
 
-**Success Criteria:**
+**Success Criteria**:
 - ✅ Complete documentation
 - ✅ Clear wiring diagrams
 - ✅ Usage instructions
 - ✅ Troubleshooting guide
 
----
-
-## Key Files to Modify
-
-### Board Configuration (NEW)
-```
-configs/Sky2040/
-├── BoardConfig.h          ← Pin mappings + turbo switch pins
-├── README.md              ← Documentation
-└── assets/
-    └── Sky2040.jpg        ← Board photo (optional)
-```
-
-### Turbo Add-on (MODIFIED)
-```
-headers/addons/turbo.h     ← Add switch structures
-src/addons/turbo.cpp       ← Add switch polling logic
-proto/config.proto         ← Add switch config (optional)
-```
-
-### Web UI (OPTIONAL)
-```
-www/src/Pages/AddonsConfigPage.tsx  ← Switch pin configuration UI
-www/src/Services/WebApi.ts          ← API endpoints
-```
+**Total Time**: 10-15 hours for complete implementation
 
 ---
 
-## Build Commands (UPDATED)
+## Build & Flash Commands
 
-### Standard Build
+### Build Firmware
 ```bash
-# Set board config
+# Set board configuration
 export GP2040_BOARDCONFIG=Sky2040
 
-# Create build directory
+# Navigate to project
 cd /Users/fwong/Documents/github/wongfei2009/GP2040-CE
+
+# Create and enter build directory
 mkdir -p build && cd build
 
-# Configure
+# Configure build
 cmake ..
 
-# Build
+# Build (use all CPU cores)
 make -j$(sysctl -n hw.ncpu)
 
-# Output file
-# GP2040-CE_X.X.X_Sky2040.uf2
+# Output file: GP2040-CE_X.X.X_Sky2040.uf2
 ```
 
-### Flash to Sky2040
+### Flash to Device
 ```bash
-# 1. Put Sky2040 in bootloader mode:
-#    - Hold BOOTSEL while plugging in USB
-#    OR
-#    - Short RUN to GND twice quickly
+# Method 1: Hold BOOTSEL while plugging in USB
+# Method 2: Short RUN pin to GND twice quickly
 
-# 2. Copy firmware
+# Copy firmware (device appears as RPI-RP2)
 cp GP2040-CE_*_Sky2040.uf2 /Volumes/RPI-RP2/
 
-# 3. Wait for device to reboot
+# Wait for automatic reboot
 ```
 
 ---
 
-## Hardware Decision Point
-
-**IMPORTANT: Choose GPIO allocation strategy before starting Phase 2!**
-
-### Option A: 7 Switches + RGB LEDs ⭐ Balanced
-- Turbo switches for: B1, B2, B3, B4, L1, R1, L2
-- R2 uses software turbo (button + turbo hotkey)
-- Keep RGB LED eye candy
-- **Best for**: Users who want visual feedback
-
-### Option B: 8 Switches, No RGB LEDs ⭐ Recommended
-- Full turbo hardware control for all 8 buttons
-- Sacrifice RGB LEDs (GPIO 28 freed)
-- **Best for**: Competitive players prioritizing functionality
-
-### Option C: 8 Switches, No Speed Dial
-- All buttons get hardware switches
-- Use D-pad + Turbo hotkey for speed adjustment
-- Keep RGB LEDs
-- **Best for**: Users who rarely change turbo speed
-
-**Recommendation**: **Option B** - Complete hardware turbo control is more valuable than RGB LEDs for this use case.
-
----
-
-## Expected Timeline
-
-| Phase | Description | Time | Dependencies |
-|-------|-------------|------|--------------|
-| 1 | BoardConfig setup | 1 hour | None |
-| 2 | Hardware wiring | 2-3 hours | Components acquired |
-| 3 | Speed dial integration | 1 hour | Phase 1 complete |
-| 4 | Turbo switches implementation | 4-6 hours | Phase 1 complete |
-| 5 | Web UI (optional) | 3-4 hours | Phase 4 complete |
-| 6 | Documentation | 2 hours | All phases complete |
-| **Total** | **Core features** | **8-11 hours** | |
-| **Total** | **With web UI** | **11-15 hours** | |
-
----
-
-## Success Criteria
+## Success Criteria Checklist
 
 ### Must Have ✅
-- [x] Sky2040 BoardConfig builds successfully
-- [ ] All original buttons work correctly
+- [ ] Sky2040 BoardConfig builds successfully
+- [ ] All 18 original buttons work correctly
 - [ ] Speed dial adjusts turbo speed (2-30 shots/sec)
 - [ ] All 8 turbo switches control their respective buttons
-- [ ] No input latency added (<1ms)
+- [ ] Hardware switches override software turbo
+- [ ] No input latency added (<1ms overhead)
 - [ ] Firmware stable in all input modes
+- [ ] RGB LEDs cleanly disabled
+- [ ] I2C display still functional
 
 ### Nice to Have 🎯
-- [ ] Web configurator shows switch pins
-- [ ] OLED displays turbo states
-- [ ] Turbo LED indicates active turbo
+- [ ] Web configurator shows switch states
+- [ ] OLED displays active turbo indicators
 - [ ] Settings persist across power cycles
-- [ ] Upstream PR accepted (contribute back)
+- [ ] Upstream PR contribution
+
+---
+
+## Technical Notes
+
+### Performance Impact
+- **GPIO reads**: ~8 digital reads per cycle = negligible (<0.5µs)
+- **ADC read**: 1 read per cycle = ~12µs (already in use)
+- **Total overhead**: <1% of 1ms input polling cycle
+- **Expected latency**: No measurable increase
+
+### Memory Footprint
+- **Code size**: +~2KB (switch logic)
+- **RAM usage**: +16 bytes (pin arrays)
+- **Flash config**: +9 bytes (pin definitions)
+- **Total impact**: Negligible (<1% of available)
+
+### Hardware Trade-offs
+**What We Gain**:
+- ✅ Full hardware turbo control (all 8 buttons)
+- ✅ Instant turbo enable/disable (no button combos)
+- ✅ Physical tactile feedback
+- ✅ No accidental turbo activation
+- ✅ Independent control per button
+
+**What We Lose**:
+- ❌ RGB LED visual feedback (GPIO 28 sacrificed)
+- ❌ Per-button LED indicators
+- ❌ Aesthetic lighting effects
+
+**Justification**: For competitive gaming, hardware turbo control provides more value than RGB aesthetics. Visual feedback can be provided via OLED display if needed.
+
+---
+
+## Troubleshooting Guide
+
+### Issue: Switch doesn't enable turbo
+**Diagnostics**:
+1. Check switch wiring (terminal 1 → GPIO, terminal 2 → GND)
+2. Verify GPIO number in BoardConfig matches physical wiring
+3. Test switch continuity with multimeter
+4. Check if GPIO is properly initialized (add debug logging)
+
+**Fix**: Verify `gpio_pull_up()` is called and switch is active-low
+
+### Issue: Speed dial doesn't change speed
+**Diagnostics**:
+1. Measure voltage at wiper: should sweep 0-3.3V
+2. Check `PIN_SHMUP_DIAL` is set to 26 (ADC0)
+3. Verify potentiometer is connected correctly (CCW→GND, CW→3.3V)
+4. Test ADC reading in web configurator
+
+**Fix**: Ensure potentiometer wiring is correct and not reversed
+
+### Issue: Multiple buttons fire when one switch enabled
+**Diagnostics**:
+1. Check for electrical shorts between GPIO pins
+2. Verify button masks in code match physical buttons
+3. Test each switch independently
+
+**Fix**: Check pin assignments and ensure no crossed wires
+
+### Issue: Turbo speed too fast/slow
+**Diagnostics**:
+1. Check speed dial range in web configurator
+2. Verify ADC is reading full 0-3.3V range
+3. Check turbo shot count settings
+
+**Fix**: Calibrate speed dial range or adjust turbo shot count
+
+### Issue: Firmware won't build
+**Diagnostics**:
+1. Verify `GP2040_BOARDCONFIG=Sky2040` is set
+2. Check all files are in correct directories
+3. Review compiler errors for syntax issues
+
+**Fix**: Ensure BoardConfig.h has no syntax errors, all pins defined
 
 ---
 
 ## Next Immediate Steps
 
-1. **Decide on GPIO allocation** (A, B, or C)
-2. **Create `configs/Sky2040/BoardConfig.h`**
-3. **Test basic build and flash**
-4. **Acquire hardware components**
-5. **Begin Phase 2 wiring**
+### Ready to Start
+1. ✅ **Decision made**: Option B (8 switches, no RGB)
+2. ✅ **Documentation complete**: This guide ready
+3. ⏭️ **Next action**: Create `configs/Sky2040/BoardConfig.h`
 
-Ready to start! 🚀
+### Phase 1 Action Items
+```bash
+# 1. Create directory
+mkdir -p configs/Sky2040
+
+# 2. Copy base config
+cp configs/Pico/BoardConfig.h configs/Sky2040/BoardConfig.h
+
+# 3. Edit the file (apply all changes from Phase 1)
+
+# 4. Test build
+export GP2040_BOARDCONFIG=Sky2040
+cd build && cmake .. && make -j$(sysctl -n hw.ncpu)
+```
+
+**After Phase 1 success** → Proceed to hardware wiring (Phase 2)
 
 ---
 
@@ -681,9 +519,12 @@ Ready to start! 🚀
 - **GP2040-CE Docs**: https://gp2040-ce.info
 - **Turbo Add-on**: https://gp2040-ce.info/add-ons/turbo/
 - **Discord Support**: https://discord.gg/k2pxhke7q8
-- **GitHub**: https://github.com/OpenStickCommunity/GP2040-CE
+- **GitHub Repo**: https://github.com/OpenStickCommunity/GP2040-CE
+- **RP2040 Datasheet**: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
+- **GPIO Reference**: https://gp2040-ce.info/controller-build/wiring/
 
-**Device Info:**
-- macOS development environment
-- Sky2040 verified config backup available
-- Fork already cloned to: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
+---
+
+## Revision History
+- **2024-11-12**: Initial comprehensive plan created
+- **2024-11-12**: Compacted and optimized for Option B implementation
