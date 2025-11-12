@@ -909,3 +909,61 @@ cd build && cmake .. && make -j$(sysctl -n hw.ncpu)
 - **2024-11-12**: Initial comprehensive plan created (Option B)
 - **2024-11-12**: Revised to Option C with I2C expander (MCP23017)
 - **2024-11-12**: Complete implementation guide with all phases documented
+
+---
+
+## macOS Build Instructions
+
+Building the firmware from source on macOS requires a specific setup to resolve dependency conflicts. The following steps have been verified to produce a successful build.
+
+### Prerequisites
+
+1.  **Xcode Command Line Tools**: Install by running `xcode-select --install` in your terminal.
+2.  **Homebrew**: The macOS package manager. If not installed, get it from [brew.sh](https://brew.sh/).
+3.  **ARM GCC Toolchain**: Install via Homebrew Cask:
+    ```bash
+    brew install --cask gcc-arm-embedded
+    ```
+
+### Build Steps
+
+The build process involves manually downloading the correct Pico SDK version before running CMake and Make.
+
+1.  **Clone the Correct Pico SDK Version**
+
+    The project requires Pico SDK version **2.1.1**. Clone it into the project's root directory:
+    ```bash
+    git clone --branch 2.1.1 https://github.com/raspberrypi/pico-sdk.git pico-sdk-2.1.1
+    ```
+
+2.  **Initialize SDK Submodules**
+
+    Navigate into the newly created SDK directory and initialize its submodules (which include the compatible Mbed TLS library):
+    ```bash
+    cd pico-sdk-2.1.1
+    git submodule update --init --recursive
+    cd ..
+    ```
+
+3.  **Configure and Build the Firmware**
+
+    This single command chain will clean any previous build, set the required environment variables, configure the project with CMake, and compile it with Make.
+
+    Run this from the root of the `GP2040-CE` project directory:
+    ```bash
+    rm -rf build && \
+    mkdir build && \
+    cd build && \
+    export SDKROOT=$(xcrun --sdk macosx --show-sdk-path) && \
+    PICO_SDK_PATH=$(pwd)/../pico-sdk-2.1.1 GP2040_BOARDCONFIG=Pico cmake -DPICO_SDK_FETCH_FROM_GIT=OFF .. && \
+    make -j$(sysctl -n hw.ncpu)
+    ```
+
+    - `rm -rf build`: Cleans up any previous build attempts.
+    - `export SDKROOT=...`: Explicitly sets the path to the macOS SDK, which fixes issues with compiling host-side Python tools.
+    - `PICO_SDK_PATH=...`: Points the build system to our manually downloaded SDK.
+    - `GP2040_BOARDCONFIG=Pico`: Sets the target board. Change `Pico` to your desired board if different.
+    - `PICO_SDK_FETCH_FROM_GIT=OFF`: Prevents the build system from automatically downloading another SDK.
+    - `make -j...`: Compiles the firmware using all available CPU cores.
+
+    Upon completion, the firmware file (e.g., `GP2040-CE_0.0.0_Pico.uf2`) will be located in the `build` directory.
