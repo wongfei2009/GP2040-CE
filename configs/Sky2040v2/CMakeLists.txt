@@ -1,0 +1,1 @@
+set(BOARD_CONFIG_LABEL "Sky2040v2")
