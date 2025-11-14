@@ -12,46 +12,6 @@
 - **Fork**: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
 - **Upstream**: OpenStickCommunity/GP2040-CE
 
-## Manufacturer Pinout Data
-
-### Connector Pins 1-15
-| Pin | Outer | Inner | Label | Description |
-|---|---|---|---|---|
-| 1 | GND | A | A | Button A (Cross) |
-| 2 | GND | B | B | Button B (Circle) |
-| 3 | GND | X | X | Button X (Square) |
-| 4 | GND | Y | Y | Button Y (Triangle) |
-| 5 | GND | L1 | L1 | Button L1 |
-| 6 | GND | R1 | R1 | Button R1 |
-| 7 | GND | L2 | L2 | Button L2 |
-| 8 | GND | R2 | R2 | Button R2 |
-| 9 | GND | L3 | L3 | Button L3 |
-| 10 | GND | R3 | R3 | Button R3 |
-| 11 | GND | SEL | Select | 选择键 |
-| 12 | GND | STA | Start | 开始键 |
-| 13 | GND | HOME | Home | PS键 |
-| 14 | GND | TURBO | Turbo | 连发键 |
-| 15 | GND | TU-LED| Turbo LED | 连发指示灯 |
-
-### Connector Pins 16-30
-| Pin | Inner | Outer | Label | Description |
-|---|---|---|---|---|
-| 16 | GND | BOOT | BOOT | Bootselect | 
-| 17 | AL | GND | AL | D-Pad Left | 
-| 18 | AR | GND | AR | D-Pad Right | 
-| 19 | AD | GND | AD | D-Pad Down | 
-| 20 | AU | GND | AU | D-Pad Up | 
-| 21 | GP22 | GND | GP22 | Expansion Key | 
-| 22 | SDA | SWDIO | SDA / SWDIO | I2C Data / Debug |
-| 23 | SCL | SWCLK | SCL / SWCLK | I2C Clock / Debug |
-| 24 | 3V3 | 3V3 | 3.3V | Power | 
-| 25 | GND | GND | GND | Ground | 
-| 26 | RUN | RS | RS | Spare Key / GPIO 26 (ADC0) | 
-| 27 | GND | LS | LS | Spare Key / GPIO 27 (ADC1) | 
-| 28 | LED-D | GND | LED-D | RGB LED Data (GPIO 28) | 
-| 29 | GND | A2 | A2 | Capture Button (GPIO 21) |
-| 30 | 5V | GND | 5V | Power |
-
 ---
 
 ## Sky 2040 Configuration
@@ -63,33 +23,33 @@
 ### GPIO Mappings (RP2040)
 
 #### Buttons (Active-Low with Pull-Up)
-| Button | GPIO | Physical Pin | Function | Notes |
-|--------|------|--------------|----------|-------|
-| B1 (A/Cross) | 6 | Pin 1 (Connector) | Face button | Turbo-capable |
-| B2 (B/Circle) | 7 | Pin 2 (Connector) | Face button | Turbo-capable |
-| B3 (X/Square) | 10 | Pin 3 (Connector) | Face button | Turbo-capable |
-| B4 (Y/Triangle) | 11 | Pin 4 (Connector) | Face button | Turbo-capable |
-| L1 | 13 | Pin 5 (Connector) | Shoulder | Turbo-capable |
-| R1 | 12 | Pin 6 (Connector) | Shoulder | Turbo-capable |
-| L2 | 9 | Pin 7 (Connector) | Trigger | Turbo-capable |
-| R2 | 8 | Pin 8 (Connector) | Trigger | Turbo-capable |
-| Up | 3 | Pin 20 (Connector) | D-pad | ⚠️ Swapped vs Pico |
-| Down | 2 | Pin 19 (Connector) | D-pad | ⚠️ Swapped vs Pico |
-| Left | 5 | Pin 17 (Connector) | D-pad | |
-| Right | 4 | Pin 18 (Connector) | D-pad | |
-| Select (S1) | 16 | Pin 11 (Connector) | System | |
-| Start (S2) | 17 | Pin 12 (Connector) | System | |
-| L3 | 18 | Pin 9 (Connector) | Stick | |
-| R3 | 19 | Pin 10 (Connector) | Stick | |
-| Home (A1) | 20 | Pin 13 (Connector) | PS/Guide | |
-| Capture (A2) | 21 | Pin 29 (Connector) | Capture | |
-| Turbo | 14 | Pin 14 (Connector) | Turbo toggle | Existing button |
+| Button | GPIO | Function | Notes |
+|--------|------|----------|-------|
+| B1 (A/Cross) | 6 | Face button | Turbo-capable |
+| B2 (B/Circle) | 7 | Face button | Turbo-capable |
+| B3 (X/Square) | 10 | Face button | Turbo-capable |
+| B4 (Y/Triangle) | 11 | Face button | Turbo-capable |
+| L1 | 13 | Shoulder | Turbo-capable |
+| R1 | 12 | Shoulder | Turbo-capable |
+| L2 | 9 | Trigger | Turbo-capable |
+| R2 | 8 | Trigger | Turbo-capable |
+| Up | 3 | D-pad | ⚠️ Swapped vs Pico |
+| Down | 2 | D-pad | ⚠️ Swapped vs Pico |
+| Left | 5 | D-pad | |
+| Right | 4 | D-pad | |
+| Select (S1) | 16 | System | |
+| Start (S2) | 17 | System | |
+| L3 | 18 | Stick | |
+| R3 | 19 | Stick | |
+| Home (A1) | 20 | PS/Guide | |
+| Capture (A2) | 21 | Capture | |
+| Turbo | 14 | Turbo toggle ||
 
 #### Peripherals
-- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C (Connector Pins 22 & 23)
-- **RGB LEDs**: Data=GPIO28 (Connector Pin 28)
-- **Turbo Button**: GPIO14 (Connector Pin 14)
-- **Turbo Speed Dial**: ADC=GPIO26 (Connector Pin 26, Outer RS)
+- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C
+- **RGB LEDs**: Data=GPIO28
+- **Turbo Button**: GPIO14
+- **Turbo Speed Dial**: ADC=GPIO26
 
 ---
 
@@ -97,7 +57,6 @@
 
 ### Why I2C Expander?
 **Problem**: Raspberry Pi Pico form factor only exposes 5 usable GPIOs
-- GP23-25, GP29 are not available (used internally or onboard LED)
 - We need 8 switches + 1 speed dial = 9 pins total
 
 **Solution**: MCP23017 I2C GPIO Expander
@@ -149,25 +108,6 @@ MCP23017 (DIP-28):
 - Jumper wires
 - 0.1μF ceramic capacitor (for MCP23017 power filtering)
 
-### Wiring Diagram
-
-#### MCP23017 Connection to Sky 2040
-```
-MCP23017 Pin → Sky 2040 Pin
-─────────────────────────────
-Pin 9 (VDD)     → Pin 36 (3V3 OUT)
-Pin 10 (VSS)    → Pin 38 (GND)
-Pin 12 (SCL)    → Pin 2 (GP01 / SCL) - Shared with display
-Pin 13 (SDA)    → Pin 1 (GP00 / SDA) - Shared with display
-Pin 18 (RESET)  → Pin 36 (3V3) via 10kΩ resistor (pull-up)
-Pin 15 (A0)     → Pin 38 (GND) - Address = 0x20
-Pin 16 (A1)     → Pin 38 (GND) - Address = 0x20
-Pin 17 (A2)     → Pin 38 (GND) - Address = 0x20
-
-Power filtering:
-- 0.1μF capacitor between VDD (Pin 9) and VSS (Pin 10)
-```
-
 **I2C Address Configuration**:
 ```
 A2  A1  A0  | I2C Address
@@ -216,9 +156,9 @@ R2      → Pin 28       → GPA7
 10kΩ Potentiometer:
 ┌──────────────────┐
 │  Potentiometer   │
-│  Pin 1 (CCW)  ───┼──→ GND (Connector Pin 25)
-│  Pin 2 (Wiper) ──┼──→ GPIO 26 (Connector Pin 26, Outer RS)
-│  Pin 3 (CW)  ────┼──→ 3.3V (Connector Pin 24)
+│  Pin 1 (CCW)  ───┼──→ GND
+│  Pin 2 (Wiper) ──┼──→ GPIO 26
+│  Pin 3 (CW)  ────┼──→ 3.3V
 └──────────────────┘
 
 Output Range: 0V (min speed) to 3.3V (max speed)
