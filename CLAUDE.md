@@ -12,57 +12,87 @@
 - **Fork**: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
 - **Upstream**: OpenStickCommunity/GP2040-CE
 
+## Manufacturer Pinout Data
+
+### Connector Pins 1-15
+| Pin | Outer | Inner | Label | Description |
+|---|---|---|---|---|
+| 1 | GND | A | A | Button A (Cross) |
+| 2 | GND | B | B | Button B (Circle) |
+| 3 | GND | X | X | Button X (Square) |
+| 4 | GND | Y | Y | Button Y (Triangle) |
+| 5 | GND | L1 | L1 | Button L1 |
+| 6 | GND | R1 | R1 | Button R1 |
+| 7 | GND | L2 | L2 | Button L2 |
+| 8 | GND | R2 | R2 | Button R2 |
+| 9 | GND | L3 | L3 | Button L3 |
+| 10 | GND | R3 | R3 | Button R3 |
+| 11 | GND | SEL | Select | 选择键 |
+| 12 | GND | STA | Start | 开始键 |
+| 13 | GND | HOME | Home | PS键 |
+| 14 | GND | TURBO | Turbo | 连发键 |
+| 15 | GND | TU-LED| Turbo LED | 连发指示灯 |
+
+### Connector Pins 16-30
+| Pin | Inner | Outer | Label | Description |
+|---|---|---|---|---|
+| 16 | GND | BOOT | BOOT | Bootselect | 
+| 17 | AL | GND | AL | D-Pad Left | 
+| 18 | AR | GND | AR | D-Pad Right | 
+| 19 | AD | GND | AD | D-Pad Down | 
+| 20 | AU | GND | AU | D-Pad Up | 
+| 21 | GP22 | GND | GP22 | Expansion Key | 
+| 22 | SDA | SWDIO | SDA / SWDIO | I2C Data / Debug |
+| 23 | SCL | SWCLK | SCL / SWCLK | I2C Clock / Debug |
+| 24 | 3V3 | 3V3 | 3.3V | Power | 
+| 25 | GND | GND | GND | Ground | 
+| 26 | RUN | RS | RS | Spare Key| 
+| 27 | GND | LS | LS | Spare Key | 
+| 28 | LED-D | GND | LED-D | LED | 
+| 29 | GND | A2 | A2 | ? |
+| 30 | 5V | GND | 5V | Power |
+
 ---
 
-## Sky 2040 Configuration (Verified from Backup)
+## Sky 2040 Configuration
 
 ### Base Configuration
-- **Board Type**: Raspberry Pi Pico form factor (40-pin)
+- **Board Type**: Raspberry Pi Pico form factor
 - **Only Difference**: GPIO 2/3 swapped for UP/DOWN vs standard Pico
-- **Source**: `gp2040ce_backup_20251112061231421.gp2040`
 
-### Pin Mappings (Verified from Physical Board)
+### GPIO Mappings (RP2040)
 
 #### Buttons (Active-Low with Pull-Up)
 | Button | GPIO | Physical Pin | Function | Notes |
 |--------|------|--------------|----------|-------|
-| B1 (A/Cross) | 6 | Pin 9 (left) | Face button | Turbo-capable |
-| B2 (B/Circle) | 7 | Pin 10 (left) | Face button | Turbo-capable |
-| B3 (X/Square) | 10 | Pin 14 (left) | Face button | Turbo-capable |
-| B4 (Y/Triangle) | 11 | Pin 15 (left) | Face button | Turbo-capable |
-| L1 | 13 | Pin 17 (left) | Shoulder | Turbo-capable |
-| R1 | 12 | Pin 16 (left) | Shoulder | Turbo-capable |
-| L2 | 9 | Pin 12 (left) | Trigger | Turbo-capable |
-| R2 | 8 | Pin 11 (left) | Trigger | Turbo-capable |
-| Up | 3 | Pin 5 (left) | D-pad | ⚠️ Swapped vs Pico |
-| Down | 2 | Pin 4 (left) | D-pad | ⚠️ Swapped vs Pico |
-| Left | 5 | Pin 7 (left) | D-pad | |
-| Right | 4 | Pin 6 (left) | D-pad | |
-| Select (S1) | 16 | Pin 21 (right) | System | |
-| Start (S2) | 17 | Pin 22 (right) | System | |
-| L3 | 18 | Pin 24 (right) | Stick | |
-| R3 | 19 | Pin 25 (right) | Stick | |
-| Home (A1) | 20 | Pin 26 (right) | PS/Guide | |
-| Capture (A2) | 21 | Pin 27 (right) | Capture | |
-| Turbo | 14 | Pin 19 (left) | Turbo toggle | Existing button |
+| B1 (A/Cross) | 6 | Pin 1 (Connector) | Face button | Turbo-capable |
+| B2 (B/Circle) | 7 | Pin 2 (Connector) | Face button | Turbo-capable |
+| B3 (X/Square) | 10 | Pin 3 (Connector) | Face button | Turbo-capable |
+| B4 (Y/Triangle) | 11 | Pin 4 (Connector) | Face button | Turbo-capable |
+| L1 | 13 | Pin 5 (Connector) | Shoulder | Turbo-capable |
+| R1 | 12 | Pin 6 (Connector) | Shoulder | Turbo-capable |
+| L2 | 9 | Pin 7 (Connector) | Trigger | Turbo-capable |
+| R2 | 8 | Pin 8 (Connector) | Trigger | Turbo-capable |
+| Up | 3 | Pin 20 (Connector) | D-pad | ⚠️ Swapped vs Pico |
+| Down | 2 | Pin 19 (Connector) | D-pad | ⚠️ Swapped vs Pico |
+| Left | 5 | Pin 17 (Connector) | D-pad | |
+| Right | 4 | Pin 18 (Connector) | D-pad | |
+| Select (S1) | 16 | Pin 11 (Connector) | System | |
+| Start (S2) | 17 | Pin 12 (Connector) | System | |
+| L3 | 18 | Pin 9 (Connector) | Stick | |
+| R3 | 19 | Pin 10 (Connector) | Stick | |
+| Home (A1) | 20 | Pin 13 (Connector) | PS/Guide | |
+| Capture (A2) | 21 | Pin 29 (Connector) | Capture | |
+| Turbo | 14 | Pin 14 (Connector) | Turbo toggle | Existing button |
 
 #### Peripherals
-- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C (Pin 1/2 left)
-- **RGB LEDs**: Data=GPIO28 (Pin 34 right) - **KEEP ENABLED** ✅
-- **Turbo Button**: GPIO14 (Pin 19 left)
-
-#### Available GPIOs (Physical Access Confirmed)
-| GPIO | Physical Pin | Function | Available? |
-|------|--------------|----------|------------|
-| 15 | Pin 20 (left) | TLED (disabled) | ✅ Available |
-| 22 | Pin 29 (right) | Unused | ✅ Available |
-| 26 | Pin 31 (right) | ADC0 | ✅ **Speed Dial** |
-| 27 | Pin 32 (right) | ADC1 | ✅ Available |
-| 28 | Pin 34 (right) | RGB LED | ✅ Keep for RGB |
+- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C (Connector Pins 22 & 23)
+- **RGB LEDs**: Data=GPIO28 (Connector Pin 29) 
+- **Turbo Button**: GPIO14 (Connector Pin 14)
 
 ---
 
-## Hardware Implementation (Option C: I2C Expander)
+## Hardware Implementation
 
 ### Why I2C Expander?
 **Problem**: Raspberry Pi Pico form factor only exposes 5 usable GPIOs
@@ -185,32 +215,13 @@ R2      → Pin 28       → GPA7
 10kΩ Potentiometer:
 ┌──────────────────┐
 │  Potentiometer   │
-│  Pin 1 (CCW)  ───┼──→ GND (Pin 38)
-│  Pin 2 (Wiper) ──┼──→ GPIO 26 (Pin 31, right side)
-│  Pin 3 (CW)  ────┼──→ 3.3V (Pin 36)
+│  Pin 1 (CCW)  ───┼──→ GND (Pin ?)
+│  Pin 2 (Wiper) ──┼──→ GPIO 26 (Pin ?, right side)
+│  Pin 3 (CW)  ────┼──→ 3.3V (Pin ?)
 └──────────────────┘
 
 Output Range: 0V (min speed) to 3.3V (max speed)
 Turbo Speed: 2-30 shots/sec based on voltage
-```
-
-### Complete System Wiring Summary
-```
-Sky 2040 (40-pin Pico)
-  ├─ Pin 1/2: I2C (GP0/GP1) ──┬─→ Display (0x3C)
-  │                           └─→ MCP23017 (0x20)
-  ├─ Pin 31: GPIO 26 (ADC0) ────→ Speed Dial Wiper
-  ├─ Pin 36: 3.3V ───────────┬─→ Pot CW pin
-  │                          ├─→ MCP23017 VDD
-  │                          └─→ MCP23017 RESET (via 10kΩ)
-  └─ Pin 38: GND ────────────┬─→ Pot CCW pin
-                             ├─→ MCP23017 VSS
-                             ├─→ All switch terminal 2
-                             └─→ MCP23017 A0/A1/A2
-
-MCP23017 (I2C Expander @ 0x20)
-  ├─ GPA0-GPA7 ───→ 8× Turbo switches (terminal 1)
-  └─ GPB0-GPB7 ───→ Unused (available for future expansion)
 ```
 
 ---
