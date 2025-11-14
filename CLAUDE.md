@@ -46,10 +46,10 @@
 | 23 | SCL | SWCLK | SCL / SWCLK | I2C Clock / Debug |
 | 24 | 3V3 | 3V3 | 3.3V | Power | 
 | 25 | GND | GND | GND | Ground | 
-| 26 | RUN | RS | RS | Spare Key| 
-| 27 | GND | LS | LS | Spare Key | 
-| 28 | LED-D | GND | LED-D | LED | 
-| 29 | GND | A2 | A2 | ? |
+| 26 | RUN | RS | RS | Spare Key / GPIO 26 (ADC0) | 
+| 27 | GND | LS | LS | Spare Key / GPIO 27 (ADC1) | 
+| 28 | LED-D | GND | LED-D | RGB LED Data (GPIO 28) | 
+| 29 | GND | A2 | A2 | Capture Button (GPIO 21) |
 | 30 | 5V | GND | 5V | Power |
 
 ---
@@ -87,8 +87,9 @@
 
 #### Peripherals
 - **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C (Connector Pins 22 & 23)
-- **RGB LEDs**: Data=GPIO28 (Connector Pin 29) 
+- **RGB LEDs**: Data=GPIO28 (Connector Pin 28)
 - **Turbo Button**: GPIO14 (Connector Pin 14)
+- **Turbo Speed Dial**: ADC=GPIO26 (Connector Pin 26, Outer RS)
 
 ---
 
@@ -215,9 +216,9 @@ R2      → Pin 28       → GPA7
 10kΩ Potentiometer:
 ┌──────────────────┐
 │  Potentiometer   │
-│  Pin 1 (CCW)  ───┼──→ GND (Pin ?)
-│  Pin 2 (Wiper) ──┼──→ GPIO 26 (Pin ?, right side)
-│  Pin 3 (CW)  ────┼──→ 3.3V (Pin ?)
+│  Pin 1 (CCW)  ───┼──→ GND (Connector Pin 25)
+│  Pin 2 (Wiper) ──┼──→ GPIO 26 (Connector Pin 26, Outer RS)
+│  Pin 3 (CW)  ────┼──→ 3.3V (Connector Pin 24)
 └──────────────────┘
 
 Output Range: 0V (min speed) to 3.3V (max speed)
