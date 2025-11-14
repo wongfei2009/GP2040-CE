@@ -1,12 +1,13 @@
-# Sky 2040 GP2040-CE Turbo Enhancement Project
+# Sky 2040 v2 GP2040-CE Turbo Enhancement Project
 
 ## Quick Summary
-**Goal**: Add hardware-based turbo controls to Sky 2040 joystick
+**Goal**: Add hardware-based turbo controls to Sky 2040 v2 joystick
 - ✅ Analog turbo speed dial (potentiometer, 2-30 shots/sec)
 - ✅ 8 per-button turbo switches (B1-B4, L1-L2, R1-R2)
-- **Strategy**: Use I2C GPIO expander (MCP23017) for switches
+- **Strategy**: Use I2C GPIO expander (MCP23017 breakout board) for switches
 - **GPIO Required**: 1 ADC (speed dial) + I2C bus (shared with display)
-- **Hardware**: MCP23017 chip + potentiometer + 8 switches
+- **Hardware**: MCP23017 breakout board + potentiometer + 8 switches
+- **Target Board**: Sky 2040 Version 2
 
 ## Project Location
 - **Fork**: `/Users/fwong/Documents/github/wongfei2009/GP2040-CE`
@@ -14,42 +15,18 @@
 
 ---
 
-## Sky 2040 Configuration
+## Sky 2040 v2 Configuration
 
 ### Base Configuration
 - **Board Type**: Raspberry Pi Pico form factor
-- **Only Difference**: GPIO 2/3 swapped for UP/DOWN vs standard Pico
+- **Board Version**: Sky 2040 Version 2
+- **Note**: Actual GPIO mappings will be documented once physical board is available for testing
 
-### GPIO Mappings (RP2040)
-
-#### Buttons (Active-Low with Pull-Up)
-| Button | GPIO | Function | Notes |
-|--------|------|----------|-------|
-| B1 (A/Cross) | 6 | Face button | Turbo-capable |
-| B2 (B/Circle) | 7 | Face button | Turbo-capable |
-| B3 (X/Square) | 10 | Face button | Turbo-capable |
-| B4 (Y/Triangle) | 11 | Face button | Turbo-capable |
-| L1 | 13 | Shoulder | Turbo-capable |
-| R1 | 12 | Shoulder | Turbo-capable |
-| L2 | 9 | Trigger | Turbo-capable |
-| R2 | 8 | Trigger | Turbo-capable |
-| Up | 3 | D-pad | ⚠️ Swapped vs Pico |
-| Down | 2 | D-pad | ⚠️ Swapped vs Pico |
-| Left | 5 | D-pad | |
-| Right | 4 | D-pad | |
-| Select (S1) | 16 | System | |
-| Start (S2) | 17 | System | |
-| L3 | 18 | Stick | |
-| R3 | 19 | Stick | |
-| Home (A1) | 20 | PS/Guide | |
-| Capture (A2) | 21 | Capture | |
-| Turbo | 14 | Turbo toggle ||
-
-#### Peripherals
-- **Display (I2C)**: SDA=GPIO0, SCL=GPIO1, Addr=0x3C
-- **RGB LEDs**: Data=GPIO28
-- **Turbo Button**: GPIO14
-- **Turbo Speed Dial**: ADC=GPIO26
+### Planned Features
+- I2C Display (shared bus with MCP23017)
+- RGB LEDs
+- Turbo speed dial (ADC input)
+- 8 per-button turbo switches via MCP23017 I2C expander
 
 ---
 
@@ -68,34 +45,20 @@
 
 ### Component List
 
-#### 1. MCP23017 I2C GPIO Expander
+#### 1. MCP23017 I2C GPIO Expander Breakout Board
 **Specs**:
 - 16 GPIO pins (we need 8)
 - I2C interface (3.3V compatible)
-- Configurable address: 0x20-0x27
+- Configurable address: 0x20-0x27 (via solder jumpers or switches)
 - Internal pull-ups available
-- DIP-28 or SOIC-28 package
+- Pre-wired power, I2C, and address configuration
 
-**Pinout**:
-```
-MCP23017 (DIP-28):
-         ┌───∪───┐
-    GPB0 │1    28│ GPA7
-    GPB1 │2    27│ GPA6
-    GPB2 │3    26│ GPA5
-    GPB3 │4    25│ GPA4
-    GPB4 │5    24│ GPA3
-    GPB5 │6    23│ GPA2
-    GPB6 │7    22│ GPA1
-    GPB7 │8    21│ GPA0
-     VDD │9    20│ INTA
-     VSS │10   19│ INTB
-      NC │11   18│ RESET
-     SCL │12   17│ A2
-     SDA │13   16│ A1
-      NC │14   15│ A0
-         └───────┘
-```
+**Recommended Products**:
+- Adafruit MCP23017 I2C GPIO Expander Breakout (#732)
+- SparkFun Qwiic GPIO MCP23017
+- Generic MCP23017 breakout boards on Amazon/AliExpress
+
+**I2C Address**: Use **0x20** (default) to avoid conflict with display (0x3C)
 
 #### 2. Turbo Speed Dial
 - 10kΩ linear potentiometer (rotary or slide)
@@ -105,96 +68,41 @@ MCP23017 (DIP-28):
 
 #### 4. Wiring Components
 - Breadboard (for prototyping)
-- Jumper wires
-- 0.1μF ceramic capacitor (for MCP23017 power filtering)
-
-**I2C Address Configuration**:
-```
-A2  A1  A0  | I2C Address
-─────────────────────────
-GND GND GND | 0x20 (default)
-GND GND VDD | 0x21
-GND VDD GND | 0x22
-GND VDD VDD | 0x23
-VDD GND GND | 0x24
-VDD GND VDD | 0x25
-VDD VDD GND | 0x26
-VDD VDD VDD | 0x27
-```
-**Use 0x20** (all address pins to GND) to avoid conflict with display (0x3C)
-
-#### Turbo Switches Connection to MCP23017
-**8 switches → MCP23017 GPA pins (active-low with pull-up)**
-
-```
-Switch Wiring (each switch):
-┌─────────────────┐
-│  SPST Switch    │
-│  Terminal 1  ───┼──→ MCP23017 GPA pin (see table below)
-│  Terminal 2  ───┼──→ GND
-└─────────────────┘
-
-Pin Assignment:
-Button  → MCP23017 Pin → GPA Pin
-─────────────────────────────────
-B1 (A)  → Pin 21       → GPA0
-B2 (B)  → Pin 22       → GPA1
-B3 (X)  → Pin 23       → GPA2
-B4 (Y)  → Pin 24       → GPA3
-L1      → Pin 25       → GPA4
-R1      → Pin 26       → GPA5
-L2      → Pin 27       → GPA6
-R2      → Pin 28       → GPA7
-```
-
-**Logic**:
-- Switch CLOSED (ON) → GPA pin reads LOW → Turbo ENABLED
-- Switch OPEN (OFF) → GPA pin reads HIGH → Normal operation
-
-#### Turbo Speed Dial Connection
-```
-10kΩ Potentiometer:
-┌──────────────────┐
-│  Potentiometer   │
-│  Pin 1 (CCW)  ───┼──→ GND
-│  Pin 2 (Wiper) ──┼──→ GPIO 26
-│  Pin 3 (CW)  ────┼──→ 3.3V
-└──────────────────┘
-
-Output Range: 0V (min speed) to 3.3V (max speed)
-Turbo Speed: 2-30 shots/sec based on voltage
-```
+- Jumper wires (male-to-female recommended for breakout boards)
 
 ---
 
 ## Software Implementation
 
-### Phase 1: Create Sky2040 BoardConfig
-**File**: `configs/Sky2040/BoardConfig.h`
+### Phase 1: Create Sky2040 v2 BoardConfig
+**File**: `configs/Sky2040v2/BoardConfig.h`
 
-**Key Changes from Pico**:
+**Note**: GPIO pin mappings will be determined once physical Sky 2040 v2 board is available for testing. The following are placeholders based on anticipated differences from standard Pico.
+
+**Expected Changes from Pico**:
 ```cpp
 // Board identification
-#define BOARD_CONFIG_LABEL "Sky2040"
+#define BOARD_CONFIG_LABEL "Sky2040v2"
 
-// D-pad GPIO swap (Sky2040-specific)
-#define GPIO_PIN_02 GpioAction::BUTTON_PRESS_DOWN  // Swapped
-#define GPIO_PIN_03 GpioAction::BUTTON_PRESS_UP    // Swapped
+// GPIO mappings - TO BE VERIFIED with physical Sky 2040 v2 board
+// (Sky 2040 v2 may have different pin layout than standard Pico)
 
-// Keep RGB LEDs enabled (no conflict with Option C)
-#define BOARD_LEDS_PIN 28  // Keep enabled ✅
-
-// Turbo speed dial (ADC0)
-#define PIN_SHMUP_DIAL 26
+// Turbo speed dial (ADC input - pin TBD with physical board)
+#define PIN_SHMUP_DIAL 26  // To be verified
 
 // I2C Turbo switches configuration
 #define TURBO_I2C_SWITCHES_ENABLED 1
-#define TURBO_I2C_SDA_PIN 0     // Shared with display
-#define TURBO_I2C_SCL_PIN 1     // Shared with display
+#define TURBO_I2C_SDA_PIN 0     // To be verified - shared with display
+#define TURBO_I2C_SCL_PIN 1     // To be verified - shared with display
 #define TURBO_I2C_BLOCK i2c0    // Same I2C block as display
 #define TURBO_I2C_SPEED 400000  // 400kHz (same as display)
 #define TURBO_I2C_ADDR 0x20     // MCP23017 address
+
+// RGB LEDs (pin TBD with physical board)
+#define BOARD_LEDS_PIN 28  // To be verified
 ```
+
+**Action Required**: Once Sky 2040 v2 board arrives, verify all GPIO assignments and update accordingly.
 
 ### Phase 2: Add MCP23017 Driver
 **Files**: `src/addons/turbo.cpp`, `headers/addons/turbo.h`, `lib/mcp23017/mcp23017.h`
@@ -361,26 +269,30 @@ void TurboInput::process() {
 
 ### Phase 1: BoardConfig Setup ⏱️ 1 hour
 **Tasks**:
-1. Create `configs/Sky2040/` directory
-2. Copy `configs/Pico/BoardConfig.h` → `configs/Sky2040/BoardConfig.h`
-3. Apply changes:
-   - Swap GPIO 2 ↔ 3
-   - Set `BOARD_CONFIG_LABEL "Sky2040"`
-   - Keep RGB enabled: `#define BOARD_LEDS_PIN 28`
-   - Add I2C turbo switch definitions
-   - Enable speed dial: `#define PIN_SHMUP_DIAL 26`
-4. Create `configs/Sky2040/README.md` with pin documentation
+1. Create `configs/Sky2040v2/` directory
+2. Copy `configs/Pico/BoardConfig.h` → `configs/Sky2040v2/BoardConfig.h`
+3. Apply initial changes for Sky 2040 v2:
+   - Set `BOARD_CONFIG_LABEL "Sky2040v2"`
+   - Add I2C turbo switch definitions (placeholder pins)
+   - Add turbo speed dial definition (placeholder pin)
+   - Add RGB LED definition (placeholder pin)
+   - **IMPORTANT**: Mark all GPIO assignments as "TO BE VERIFIED" until physical board arrives
+4. Create `configs/Sky2040v2/README.md` noting that pin mappings are pending physical board verification
 5. Test build:
    ```bash
-   export GP2040_BOARDCONFIG=Sky2040
+   export GP2040_BOARDCONFIG=Sky2040v2
    cd build && cmake .. && make -j$(sysctl -n hw.ncpu)
    ```
 
+**Post-Hardware Arrival**:
+- Map all buttons and verify GPIO assignments with physical Sky 2040 v2 board
+- Update BoardConfig.h with verified pin mappings
+- Test each button, display, RGB LEDs, and peripherals
+- Document actual pinout in README.md
+
 **Success Criteria**:
-- ✅ Builds without errors
-- ✅ All buttons respond correctly
-- ✅ Display shows properly
-- ✅ RGB LEDs work
+- ✅ Builds without errors (with placeholder pins)
+- ✅ Ready to update with real pin mappings when board arrives
 
 ### Phase 2: MCP23017 Library ⏱️ 2-3 hours
 **Tasks**:
@@ -400,39 +312,37 @@ void TurboInput::process() {
 - ✅ Display continues working
 - ✅ No I2C bus conflicts
 
-### Phase 3: Hardware Assembly ⏱️ 3-4 hours
+### Phase 3: Hardware Assembly ⏱️ 2-3 hours
 **Tasks**:
 1. Acquire components:
-   - MCP23017 chip (DIP-28 or SOIC-28 with adapter)
+   - **MCP23017 breakout board** (Adafruit, SparkFun, or generic)
    - 8× SPST toggle switches OR DIP-8 switch array
    - 10kΩ linear potentiometer
    - Breadboard + jumper wires
-   - 0.1μF ceramic capacitor
-   - 10kΩ resistor (RESET pull-up)
-2. Wire MCP23017 to Sky 2040:
-   - Power: VDD→3.3V, VSS→GND
-   - I2C: SDA→GP0, SCL→GP1
-   - Address: A0/A1/A2→GND (addr 0x20)
-   - RESET→3.3V via 10kΩ
-   - Add 0.1μF cap across VDD/VSS
-3. Wire 8 switches to MCP23017:
-   - Each terminal 1→GPA0-7
-   - Each terminal 2→GND
-4. Wire speed dial:
-   - Pin 1→GND
-   - Pin 2→GPIO 26
-   - Pin 3→3.3V
-5. Verify connections:
-   - Check I2C with logic analyzer or scope (optional)
-   - Test continuity
-   - Verify no shorts
+   - Sky 2040 v2 board
+2. **First Step with Sky 2040 v2**: Map and document all GPIO pins
+   - Identify I2C pins (SDA/SCL) for display and MCP23017
+   - Identify available ADC pin for potentiometer
+   - Identify RGB LED data pin (if present)
+   - Identify all button pins and verify their functions
+   - Update `configs/Sky2040v2/BoardConfig.h` with verified mappings
+3. Connect MCP23017 breakout to Sky 2040 v2:
+   - VCC/VDD → 3.3V
+   - GND → GND
+   - SDA → Verified I2C SDA pin
+   - SCL → Verified I2C SCL pin
+   - Set I2C address to 0x20 (usually default)
+4. Connect 8 switches to MCP23017 GPA0-GPA7 pins (one side to pin, other to GND)
+5. Connect potentiometer wiper to verified ADC pin (other pins to GND and 3.3V)
+6. Test connections with multimeter
 
 **Success Criteria**:
-- ✅ MCP23017 powers up
+- ✅ Sky 2040 v2 GPIO pinout fully documented
+- ✅ MCP23017 detected on I2C bus at 0x20
 - ✅ I2C communication works
 - ✅ All switches toggle cleanly
-- ✅ Potentiometer sweeps 0-3.3V
-- ✅ Display still works
+- ✅ Potentiometer reads correctly
+- ✅ Display still works on Sky 2040 v2 (no I2C conflict)
 
 ### Phase 4: Turbo Addon Integration ⏱️ 4-6 hours
 **Tasks**:
@@ -509,7 +419,7 @@ void TurboInput::process() {
 
 ### Phase 7: Documentation ⏱️ 1-2 hours
 **Tasks**:
-1. Update `configs/Sky2040/README.md`:
+1. Update `configs/Sky2040v2/README.md`:
    - Complete pin mapping table
    - I2C expander wiring diagram
    - Turbo switch wiring
@@ -521,7 +431,7 @@ void TurboInput::process() {
 5. Take photos of completed build
 6. Update CLAUDE.md with final status
 
-**Total Time**: 14-21 hours for complete implementation
+**Total Time**: 12-18 hours for complete implementation (reduced due to breakout board simplicity)
 
 ---
 
@@ -530,7 +440,7 @@ void TurboInput::process() {
 ### Build Firmware
 ```bash
 # Set board configuration
-export GP2040_BOARDCONFIG=Sky2040
+export GP2040_BOARDCONFIG=Sky2040v2
 
 # Navigate to project
 cd /Users/fwong/Documents/github/wongfei2009/GP2040-CE
@@ -544,7 +454,7 @@ cmake ..
 # Build (use all CPU cores)
 make -j$(sysctl -n hw.ncpu)
 
-# Output file: GP2040-CE_X.X.X_Sky2040.uf2
+# Output file: GP2040-CE_X.X.X_Sky2040v2.uf2
 ```
 
 ### Flash to Device
@@ -553,7 +463,7 @@ make -j$(sysctl -n hw.ncpu)
 # Method 2: Short RUN pin to GND twice quickly
 
 # Copy firmware (device appears as RPI-RP2)
-cp GP2040-CE_*_Sky2040.uf2 /Volumes/RPI-RP2/
+cp GP2040-CE_*_Sky2040v2.uf2 /Volumes/RPI-RP2/
 
 # Wait for automatic reboot
 ```
@@ -563,7 +473,7 @@ cp GP2040-CE_*_Sky2040.uf2 /Volumes/RPI-RP2/
 ## Success Criteria Checklist
 
 ### Must Have ✅
-- [ ] Sky2040 BoardConfig builds successfully
+- [ ] Sky2040v2 BoardConfig builds successfully
 - [ ] All 18 original buttons work correctly
 - [ ] MCP23017 communicates via I2C
 - [ ] Speed dial adjusts turbo speed (2-30 shots/sec)
@@ -583,284 +493,40 @@ cp GP2040-CE_*_Sky2040.uf2 /Volumes/RPI-RP2/
 
 ---
 
-## Technical Notes
-
-### I2C Bus Sharing
-**Challenge**: MCP23017 and display share the same I2C bus
-**Solution**:
-- Display initializes I2C bus first (address 0x3C)
-- MCP23017 uses same bus, different address (0x20)
-- No mutex needed (both accessed from same thread)
-- Turbo addon reads after display updates
-
-**Bus Speed**: 400kHz (fast mode)
-- Display: 400kHz
-- MCP23017: up to 1.7MHz (we use 400kHz to match)
-
-**Performance Impact**:
-- I2C read (8 GPIO): ~50-100µs
-- Total overhead: <0.1% of 1ms polling cycle
-- No measurable latency increase
-
-### Memory Footprint
-- **Code size**: +~4KB (MCP23017 library + integration)
-- **RAM usage**: +64 bytes (MCP23017 object + buffers)
-- **Flash config**: +16 bytes (I2C config)
-- **Total impact**: <1% of available memory
-
-### Hardware Trade-offs
-
-**What We Gain**:
-- ✅ Full 8-button hardware turbo control
-- ✅ Variable speed dial (2-30 shots/sec)
-- ✅ Instant turbo enable/disable
-- ✅ Physical tactile feedback
-- ✅ No GPIO limitations
-- ✅ RGB LEDs preserved
-- ✅ Expansion capability (8 more GPIOs on Port B)
-
-**What We Sacrifice**:
-- ⚠️ Added complexity (external chip required)
-- ⚠️ Slight cost increase (~$1-2 for MCP23017)
-- ⚠️ Additional wiring
-- ⚠️ Breadboard or custom PCB needed
-
-**Justification**: 
-- Option C provides the complete original vision
-- I2C expanders are reliable and well-tested
-- No compromise on features
-- Scalable for future expansion
-
----
-
-## Troubleshooting Guide
-
-### Issue: MCP23017 not detected on I2C bus
-**Diagnostics**:
-1. Check I2C address configuration:
-   - Verify A0/A1/A2 pins are connected to GND
-   - Expected address: 0x20
-   - Use I2C scanner to detect devices
-2. Verify power connections:
-   - VDD connected to 3.3V (NOT 5V!)
-   - VSS connected to GND
-   - Check voltage with multimeter: ~3.3V
-3. Check I2C bus connections:
-   - SDA (pin 13) → GP0 (Sky 2040 pin 1)
-   - SCL (pin 12) → GP1 (Sky 2040 pin 2)
-   - Verify with multimeter for continuity
-4. Check RESET pin:
-   - Should be pulled HIGH via 10kΩ resistor
-   - Never leave floating or connected to GND
-5. Add 0.1µF capacitor between VDD and VSS
-
-**Fix**: 
-- Double-check all wiring
-- Verify 3.3V power (NOT 5V)
-- Test with I2C scanner code first
-
-### Issue: Display stops working after adding MCP23017
-**Diagnostics**:
-1. Check for I2C address conflict
-   - Display: 0x3C
-   - MCP23017: 0x20
-   - Should be different!
-2. Verify display still initializes first
-3. Check if I2C bus speed matches (400kHz)
-4. Look for shorts or loose connections
-
-**Fix**:
-- Ensure display addon initializes before turbo addon
-- Verify no I2C address conflict
-- Add delays between I2C transactions if needed
-
-### Issue: Switches don't enable turbo
-**Diagnostics**:
-1. Check switch wiring:
-   - Terminal 1 → MCP23017 GPA pin
-   - Terminal 2 → GND
-2. Verify MCP23017 pull-ups enabled (GPPUA = 0xFF)
-3. Test switch continuity with multimeter
-4. Read GPA register directly to see raw values
-5. Check button mask mapping in code
-
-**Fix**:
-- Verify active-low logic (LOW = ON)
-- Check pull-up configuration
-- Test each switch independently
-
-### Issue: Speed dial doesn't change speed
-**Diagnostics**:
-1. Measure voltage at wiper: should sweep 0-3.3V
-2. Check `PIN_SHMUP_DIAL` is set to 26
-3. Verify potentiometer wiring (CCW→GND, CW→3.3V)
-4. Test ADC reading in web configurator
-
-**Fix**:
-- Ensure pot is 10kΩ linear taper
-- Verify wiper connection to GPIO 26
-- Check for reversed connections
-
-### Issue: I2C bus hangs or times out
-**Diagnostics**:
-1. Check for short circuits on SDA/SCL lines
-2. Verify pull-up resistors present (usually built-in)
-3. Check bus capacitance (long wires add capacitance)
-4. Look for EMI from RGB LEDs or other sources
-
-**Fix**:
-- Keep I2C wires short (<6 inches ideal)
-- Add 2.2kΩ-4.7kΩ pull-ups if needed
-- Reduce I2C speed to 100kHz if problems persist
-- Shield I2C wires if near noisy signals
-
-### Issue: Some switches work, others don't
-**Diagnostics**:
-1. Test each GPA pin individually
-2. Check for cold solder joints
-3. Verify switch functionality with multimeter
-4. Read MCP23017 GPIOA register to see raw data
-
-**Fix**:
-- Re-solder suspect connections
-- Replace faulty switches
-- Verify pin mapping in code matches hardware
-
-### Issue: Turbo speed inconsistent
-**Diagnostics**:
-1. Check for noise on ADC input (GPIO 26)
-2. Verify 0.1µF capacitor on pot wiper to GND
-3. Test pot with multimeter (should be linear)
-4. Check for loose wiper connection
-
-**Fix**:
-- Add 0.1µF filter cap between wiper and GND
-- Use shielded wire for ADC connection
-- Replace potentiometer if worn
-
----
-
-## Component Sourcing
-
-### MCP23017 I2C GPIO Expander
-**Vendors**:
-- DigiKey: [MCP23017-E/SP](https://www.digikey.com/product-detail/en/MCP23017-E-SP/MCP23017-E-SP-ND/)
-- Mouser: Part #579-MCP23017-E/SP
-- Adafruit: [I2C Expander Breakout](https://www.adafruit.com/product/732)
-- Amazon: Search "MCP23017" (~$5-10 for breakout boards)
-
-**Recommended**: Buy pre-soldered breakout board for easier prototyping
-
-### Other Components
-- **10kΩ Potentiometer**: Any linear taper, rotary or slide
-- **SPST Switches**: DigiKey, Mouser, or Amazon
-- **DIP-8 Switch Array**: Easier than 8 individual switches
-- **Breadboard**: Standard 830-point breadboard
-- **Jumper Wires**: Male-to-male and male-to-female
-
----
-
-## Alternative: Custom PCB Design
-
-For a permanent installation, consider designing a custom PCB:
-
-### PCB Features
-1. MCP23017 surface-mount footprint
-2. 8× switch footprints (through-hole)
-3. Potentiometer mounting
-4. 40-pin header to plug onto Sky 2040
-5. Power regulation and filtering
-6. I2C level shifting (if needed)
-
-### PCB Design Tools
-- **KiCad**: Free, open-source
-- **EasyEDA**: Free, web-based
-- **Eagle**: Free for small boards
-
-### PCB Manufacturers
-- **JLCPCB**: $2 for 5 boards + assembly service
-- **PCBWay**: Similar pricing
-- **OSH Park**: Made in USA, $5/sq in
-
----
-
-## Future Expansion Ideas
-
-### Using MCP23017 Port B (8 additional GPIOs)
-The MCP23017 has 8 unused GPIOs on Port B (GPB0-GPB7) available for:
-
-1. **Additional Input Buttons**
-   - Macro buttons
-   - Profile switching
-   - Custom functions
-
-2. **LED Indicators**
-   - Per-button turbo status LEDs
-   - Speed indicator LEDs
-   - Mode indicators
-
-3. **Analog Inputs** (with external ADC)
-   - Second speed dial
-   - Analog stick deadzone adjustment
-   - Trigger sensitivity
-
-4. **Expansion Connector**
-   - Breakout header for future add-ons
-   - Plugin modules
-
-### Daisy-Chaining Multiple MCP23017s
-- Connect up to 8 chips on same I2C bus
-- Addresses: 0x20-0x27
-- 128 additional GPIO pins possible!
-
----
-
-## Resources
-
-- **GP2040-CE Docs**: https://gp2040-ce.info
-- **Turbo Add-on**: https://gp2040-ce.info/add-ons/turbo/
-- **MCP23017 Datasheet**: https://www.microchip.com/wwwproducts/en/MCP23017
-- **I2C Bus Spec**: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
-- **Discord Support**: https://discord.gg/k2pxhke7q8
-- **GitHub Repo**: https://github.com/OpenStickCommunity/GP2040-CE
-- **RP2040 Datasheet**: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
-
----
-
 ## Next Immediate Steps
 
 ### Ready to Start
-1. ✅ **Decision made**: Option C (I2C expander)
-2. ✅ **Documentation complete**: Full implementation plan
-3. ⏭️ **Next action**: Order MCP23017 chip + components
+1. ✅ **Decision made**: MCP23017 breakout board approach
+2. ✅ **Documentation complete**: Full implementation plan for Sky 2040 v2
+3. ✅ **Board identified**: Sky 2040 Version 2
+4. ⏭️ **Next action**: Order MCP23017 breakout board + components
 
-### Phase 1 Action Items (After Components Arrive)
+### Phase 1 Action Items (Can Start Now - Before Hardware Arrives)
 ```bash
-# 1. Create directory
-mkdir -p configs/Sky2040
+# 1. Create directory for Sky 2040 v2 config
+mkdir -p configs/Sky2040v2
 
 # 2. Copy base config
-cp configs/Pico/BoardConfig.h configs/Sky2040/BoardConfig.h
+cp configs/Pico/BoardConfig.h configs/Sky2040v2/BoardConfig.h
 
-# 3. Edit the file (apply all changes from Phase 1)
+# 3. Edit the file (apply placeholder Sky 2040 v2 config)
+#    Mark GPIO pins as "TO BE VERIFIED" with physical board
 
 # 4. Create MCP23017 library
 mkdir -p lib/mcp23017
 # (implement mcp23017.h and mcp23017.cpp)
 
-# 5. Test build
-export GP2040_BOARDCONFIG=Sky2040
+# 5. Test build for Sky 2040 v2 (with placeholder config)
+export GP2040_BOARDCONFIG=Sky2040v2
 cd build && cmake .. && make -j$(sysctl -n hw.ncpu)
 ```
 
-**After Phase 1 success** → Assemble hardware (Phase 3) → Integrate software (Phase 4)
-
----
-
-## Revision History
-- **2024-11-12**: Initial comprehensive plan created (Option B)
-- **2024-11-12**: Revised to Option C with I2C expander (MCP23017)
-- **2024-11-12**: Complete implementation guide with all phases documented
+**After Sky 2040 v2 Board Arrives**:
+1. Flash placeholder firmware to test basic functionality
+2. Map all GPIO pins with multimeter and testing
+3. Update BoardConfig.h with verified pin assignments
+4. Rebuild and verify all functions work correctly
+5. Proceed to Phase 3 (Hardware Assembly)
 
 ---
 
