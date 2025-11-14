@@ -33,8 +33,9 @@
 ## Hardware Implementation
 
 ### Why I2C Expander?
-**Problem**: Raspberry Pi Pico form factor only exposes 5 usable GPIOs
-- We need 8 switches + 1 speed dial = 9 pins total
+**Problem**: Sky 2040 v2 has sufficient GPIOs on the RP2040, but they're already assigned to existing features (buttons, display, RGB LEDs, etc.)
+- We need 8 switches + 1 speed dial = 9 **additional** pins
+- No unassigned GPIOs available for these new turbo features
 
 **Solution**: MCP23017 I2C GPIO Expander
 - Provides 16 additional GPIO pins via I2C
